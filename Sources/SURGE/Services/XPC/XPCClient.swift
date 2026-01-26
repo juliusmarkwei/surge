@@ -140,6 +140,56 @@ actor XPCClient {
         }
     }
 
+    func scanTreeMap(path: String, maxDepth: Int) async throws -> TreeMapItem {
+        let proxy = try getProxy()
+
+        return try await withCheckedThrowingContinuation { continuation in
+            proxy.scanTreeMap(path: path, maxDepth: maxDepth) { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
+    func findDuplicates(paths: [String], minSize: UInt64) async throws -> [DuplicateGroup] {
+        let proxy = try getProxy()
+
+        return try await withCheckedThrowingContinuation { continuation in
+            proxy.findDuplicates(paths: paths, minSize: minSize) { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
+    func findLargeOldFiles(paths: [String], minSize: UInt64, minAge: Int) async throws -> [LargeFileItem] {
+        let proxy = try getProxy()
+
+        return try await withCheckedThrowingContinuation { continuation in
+            proxy.findLargeOldFiles(paths: paths, minSize: minSize, minAge: minAge) { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
+    func listInstalledApps() async throws -> [InstalledApp] {
+        let proxy = try getProxy()
+
+        return try await withCheckedThrowingContinuation { continuation in
+            proxy.listInstalledApps { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
+    func uninstallApp(_ app: InstalledApp) async throws {
+        let proxy = try getProxy()
+
+        return try await withCheckedThrowingContinuation { continuation in
+            proxy.uninstallApp(app: app) { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
     // MARK: - Performance
 
     func optimizeMemory() async throws -> MemoryOptimizationResult {

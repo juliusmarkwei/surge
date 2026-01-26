@@ -2,7 +2,7 @@
 //  StorageView.swift
 //  SURGE
 //
-//  Main storage management view with cleanup functionality.
+//  Main storage management view with multiple tabs for different features
 //
 
 import SwiftUI
@@ -10,8 +10,7 @@ import Shared
 
 struct StorageView: View {
 
-    @StateObject private var viewModel = StorageViewModel()
-    @ObservedObject private var coordinator = CleanupCoordinator.shared
+    @State private var selectedTab: StorageTab = .cleanup
 
     var body: some View {
         VStack(spacing: 0) {
@@ -20,6 +19,99 @@ struct StorageView: View {
 
             Divider()
 
+            // Tab content
+            tabContentView
+        }
+    }
+
+    // MARK: - Header
+
+    private var headerView: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Storage")
+                    .font(.title)
+                    .fontWeight(.bold)
+
+                Text("Manage disk space and cleanup")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            // Tab selector
+            Picker("", selection: $selectedTab) {
+                ForEach(StorageTab.allCases) { tab in
+                    Label(tab.title, systemImage: tab.icon).tag(tab)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 400)
+        }
+        .padding()
+    }
+
+    // MARK: - Tab Content
+
+    @ViewBuilder
+    private var tabContentView: some View {
+        switch selectedTab {
+        case .cleanup:
+            SystemCleanupView()
+        case .visualizer:
+            TreeMapView()
+        case .duplicates:
+            DuplicateFinderView()
+        case .largeFiles:
+            LargeFilesView()
+        case .apps:
+            AppUninstallerView()
+        }
+    }
+}
+
+// MARK: - Storage Tabs
+
+enum StorageTab: String, CaseIterable, Identifiable {
+    case cleanup = "Cleanup"
+    case visualizer = "Visualizer"
+    case duplicates = "Duplicates"
+    case largeFiles = "Large Files"
+    case apps = "Apps"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .cleanup: return "System Cleanup"
+        case .visualizer: return "Space Lens"
+        case .duplicates: return "Duplicates"
+        case .largeFiles: return "Large Files"
+        case .apps: return "Uninstall Apps"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .cleanup: return "trash"
+        case .visualizer: return "chart.pie"
+        case .duplicates: return "doc.on.doc"
+        case .largeFiles: return "doc.badge.clock"
+        case .apps: return "app.badge"
+        }
+    }
+}
+
+// MARK: - System Cleanup View (original StorageView content)
+
+struct SystemCleanupView: View {
+
+    @StateObject private var viewModel = StorageViewModel()
+    @ObservedObject private var coordinator = CleanupCoordinator.shared
+
+    var body: some View {
+        VStack(spacing: 0) {
             // Main content
             if coordinator.isScanning {
                 scanningView
@@ -35,37 +127,6 @@ struct StorageView: View {
         .sheet(isPresented: $viewModel.showingCleanupResult) {
             CleanupResultSheet(result: viewModel.lastCleanupResult)
         }
-    }
-
-    // MARK: - Header
-
-    private var headerView: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Storage Management")
-                    .font(.title)
-                    .fontWeight(.bold)
-
-                if let lastScan = coordinator.lastScanDate {
-                    Text("Last scan: \(viewModel.formatDate(lastScan))")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-
-            Spacer()
-
-            Button {
-                Task {
-                    await viewModel.performScan()
-                }
-            } label: {
-                Label("Scan", systemImage: "arrow.clockwise")
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(coordinator.isScanning)
-        }
-        .padding()
     }
 
     // MARK: - Empty State

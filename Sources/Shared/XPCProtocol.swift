@@ -53,6 +53,53 @@ public protocol PrivilegedHelperProtocol {
         reply: @escaping (Result<[FileEntry], XPCError>) -> Void
     )
 
+    /// Scan directory tree for TreeMap visualization
+    /// - Parameters:
+    ///   - path: Root path to scan
+    ///   - maxDepth: Maximum directory depth (default: 5)
+    ///   - reply: Callback with tree structure
+    func scanTreeMap(
+        path: String,
+        maxDepth: Int,
+        reply: @escaping (Result<TreeMapItem, XPCError>) -> Void
+    )
+
+    /// Find duplicate files using SHA-256 hashing
+    /// - Parameters:
+    ///   - paths: Paths to scan for duplicates
+    ///   - minSize: Minimum file size to consider (default: 1MB)
+    ///   - reply: Callback with duplicate groups
+    func findDuplicates(
+        paths: [String],
+        minSize: UInt64,
+        reply: @escaping (Result<[DuplicateGroup], XPCError>) -> Void
+    )
+
+    /// Find large and old files
+    /// - Parameters:
+    ///   - paths: Paths to scan
+    ///   - minSize: Minimum file size in bytes (default: 100MB)
+    ///   - minAge: Minimum age in days (default: 365)
+    ///   - reply: Callback with large/old files
+    func findLargeOldFiles(
+        paths: [String],
+        minSize: UInt64,
+        minAge: Int,
+        reply: @escaping (Result<[LargeFileItem], XPCError>) -> Void
+    )
+
+    /// List installed applications
+    func listInstalledApps(reply: @escaping (Result<[InstalledApp], XPCError>) -> Void)
+
+    /// Uninstall an application completely
+    /// - Parameters:
+    ///   - app: Application to uninstall
+    ///   - reply: Callback with result
+    func uninstallApp(
+        app: InstalledApp,
+        reply: @escaping (Result<Void, XPCError>) -> Void
+    )
+
     // MARK: - Performance
 
     /// Get detailed memory information

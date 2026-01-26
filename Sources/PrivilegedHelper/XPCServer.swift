@@ -168,6 +168,137 @@ class HelperXPCService: NSObject, PrivilegedHelperProtocol {
         }
     }
 
+    func scanTreeMap(
+        path: String,
+        maxDepth: Int,
+        reply: @escaping (Result<TreeMapItem, XPCError>) -> Void
+    ) {
+        xpcLogger.info("scanTreeMap called", metadata: [
+            "path": .string(path),
+            "maxDepth": .stringConvertible(maxDepth)
+        ])
+
+        // Validate maxDepth
+        guard maxDepth > 0 && maxDepth <= 10 else {
+            reply(.failure(.invalidInput("maxDepth must be between 1 and 10")))
+            return
+        }
+
+        do {
+            let item = try TreeMapScanner.shared.scanTreeMap(at: path, maxDepth: maxDepth)
+            xpcLogger.info("TreeMap scan complete", metadata: [
+                "size": .stringConvertible(item.size)
+            ])
+            reply(.success(item))
+        } catch let error as XPCError {
+            xpcLogger.error("TreeMap scan failed", metadata: ["error": .string(error.localizedDescription)])
+            reply(.failure(error))
+        } catch {
+            xpcLogger.error("TreeMap scan failed", metadata: ["error": .string(error.localizedDescription)])
+            reply(.failure(.operationFailed(error.localizedDescription)))
+        }
+    }
+
+    func findDuplicates(
+        paths: [String],
+        minSize: UInt64,
+        reply: @escaping (Result<[DuplicateGroup], XPCError>) -> Void
+    ) {
+        xpcLogger.info("findDuplicates called", metadata: [
+            "paths": .stringConvertible(paths.count),
+            "minSize": .stringConvertible(minSize)
+        ])
+
+        guard !paths.isEmpty else {
+            reply(.failure(.invalidInput("No paths specified")))
+            return
+        }
+
+        do {
+            let groups = try DuplicateFinder.shared.findDuplicates(in: paths, minSize: minSize)
+            xpcLogger.info("Duplicate scan complete", metadata: [
+                "groups": .stringConvertible(groups.count),
+                "wastedSpace": .stringConvertible(groups.reduce(0) { $0 + $1.wastedSpace })
+            ])
+            reply(.success(groups))
+        } catch {
+            xpcLogger.error("Duplicate scan failed", metadata: ["error": .string(error.localizedDescription)])
+            reply(.failure(.operationFailed(error.localizedDescription)))
+        }
+    }
+
+    func findLargeOldFiles(
+        paths: [String],
+        minSize: UInt64,
+        minAge: Int,
+        reply: @escaping (Result<[LargeFileItem], XPCError>) -> Void
+    ) {
+        xpcLogger.info("findLargeOldFiles called", metadata: [
+            "paths": .stringConvertible(paths.count),
+            "minSize": .stringConvertible(minSize),
+            "minAge": .stringConvertible(minAge)
+        ])
+
+        guard !paths.isEmpty else {
+            reply(.failure(.invalidInput("No paths specified")))
+            return
+        }
+
+        guard minAge > 0 else {
+            reply(.failure(.invalidInput("minAge must be greater than 0")))
+            return
+        }
+
+        do {
+            let files = try LargeOldFileFinder.shared.findLargeOldFiles(
+                in: paths,
+                minSize: minSize,
+                minAge: minAge
+            )
+            xpcLogger.info("Large/old file scan complete", metadata: [
+                "files": .stringConvertible(files.count),
+                "totalSize": .stringConvertible(files.reduce(0) { $0 + $1.size })
+            ])
+            reply(.success(files))
+        } catch {
+            xpcLogger.error("Large/old file scan failed", metadata: ["error": .string(error.localizedDescription)])
+            reply(.failure(.operationFailed(error.localizedDescription)))
+        }
+    }
+
+    func listInstalledApps(reply: @escaping (Result<[InstalledApp], XPCError>) -> Void) {
+        xpcLogger.info("listInstalledApps called")
+
+        do {
+            let apps = try AppUninstaller.shared.listInstalledApps()
+            xpcLogger.info("Application list complete", metadata: [
+                "apps": .stringConvertible(apps.count)
+            ])
+            reply(.success(apps))
+        } catch {
+            xpcLogger.error("Failed to list applications", metadata: ["error": .string(error.localizedDescription)])
+            reply(.failure(.operationFailed(error.localizedDescription)))
+        }
+    }
+
+    func uninstallApp(
+        app: InstalledApp,
+        reply: @escaping (Result<Void, XPCError>) -> Void
+    ) {
+        xpcLogger.info("uninstallApp called", metadata: ["app": .string(app.name)])
+
+        do {
+            try AppUninstaller.shared.uninstallApp(app)
+            reply(.success(()))
+        } catch let error as XPCError {
+            xpcLogger.error("Uninstall failed", metadata: ["error": .string(error.localizedDescription)])
+            reply(.failure(error))
+        } catch {
+            xpcLogger.error("Uninstall failed", metadata: ["error": .string(error.localizedDescription)])
+            reply(.failure(.operationFailed(error.localizedDescription)))
+        }
+    }
+
     // MARK: - Performance
 
     func getMemoryInfo(reply: @escaping (Result<MemoryInfo, XPCError>) -> Void) {

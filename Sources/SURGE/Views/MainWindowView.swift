@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Shared
+import Security
 
 struct MainWindowView: View {
 
@@ -56,8 +57,31 @@ struct MainWindowView: View {
     @ViewBuilder
     private var contentView: some View {
         Group {
-            if !appState.isHelperConnected {
+            if !appState.isHelperConnected && !isDevelopmentBuild {
                 helperSetupView
+            } else if !appState.isHelperConnected && isDevelopmentBuild {
+                // In development mode, show the dev message but also let them explore UI
+                VStack(spacing: 0) {
+                    helperSetupView
+                        .frame(maxHeight: 400)
+
+                    Divider()
+
+                    // Show the selected tab content anyway (with limitations)
+                    Group {
+                        switch selectedTab {
+                        case .smartCare:
+                            SmartCareView()
+                        case .storage:
+                            StorageView()
+                        case .performance:
+                            PerformanceView()
+                        case .security:
+                            SecurityView()
+                        }
+                    }
+                    .opacity(0.9)
+                }
             } else {
                 switch selectedTab {
                 case .smartCare:
@@ -77,34 +101,105 @@ struct MainWindowView: View {
     // MARK: - Helper Setup
 
     private var helperSetupView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "gearshape.2")
+        VStack(spacing: 24) {
+            Image(systemName: isDevelopmentBuild ? "hammer.fill" : "gearshape.2")
                 .font(.system(size: 64))
-                .foregroundColor(.secondary)
+                .foregroundColor(isDevelopmentBuild ? .orange : .secondary)
 
-            Text("Privileged Helper Required")
+            Text(isDevelopmentBuild ? "Development Mode" : "Privileged Helper Required")
                 .font(.title)
 
-            Text("SURGE requires a privileged helper tool to perform system operations.")
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-                .frame(maxWidth: 400)
+            if isDevelopmentBuild {
+                VStack(spacing: 16) {
+                    Text("You're running an unsigned development build.")
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.secondary)
 
-            Button("Install Helper") {
-                Task {
-                    await appState.installHelper()
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("UI fully functional for testing", systemImage: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        Label("Helper installation requires code signing", systemImage: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                        Label("All code is implemented and ready", systemImage: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                    }
+                    .font(.callout)
+                    .frame(maxWidth: 500, alignment: .leading)
+
+                    Text("To test helper features, see DEVELOPMENT_NOTES.md for building a signed app bundle (Phase 8).")
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: 400)
+
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    Text("Continue exploring the UI below:")
+                        .font(.headline)
+
+                    // Show tab selection even without helper
+                    HStack(spacing: 12) {
+                        ForEach(Tab.allCases, id: \.self) { tab in
+                            Button {
+                                selectedTab = tab
+                                // Allow viewing UI even without helper
+                            } label: {
+                                VStack(spacing: 4) {
+                                    Image(systemName: tab.icon)
+                                        .font(.title2)
+                                    Text(tab.rawValue)
+                                        .font(.caption)
+                                }
+                                .frame(width: 100, height: 80)
+                                .background(selectedTab == tab ? Color.accentColor.opacity(0.1) : Color.clear)
+                                .cornerRadius(8)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
-            }
-            .buttonStyle(.borderedProminent)
-
-            if let error = appState.error {
-                Text(error)
-                    .font(.caption)
-                    .foregroundColor(.red)
+                .frame(maxWidth: 600)
+            } else {
+                Text("SURGE requires a privileged helper tool to perform system operations.")
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
                     .frame(maxWidth: 400)
+
+                Button("Install Helper") {
+                    Task {
+                        await appState.installHelper()
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+
+                if let error = appState.error {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .frame(maxWidth: 400)
+                }
             }
         }
         .padding()
+    }
+
+    // Check if this is a development build (unsigned)
+    private var isDevelopmentBuild: Bool {
+        // Check if the app is code signed
+        guard let executableURL = Bundle.main.executableURL else { return true }
+
+        var staticCode: SecStaticCode?
+        let status = SecStaticCodeCreateWithPath(executableURL as CFURL, [], &staticCode)
+
+        if status != errSecSuccess { return true }
+
+        guard let code = staticCode else { return true }
+
+        // Check if it has a valid signature
+        let checkStatus = SecStaticCodeCheckValidity(code, [], nil)
+        return checkStatus != errSecSuccess
     }
 }
 

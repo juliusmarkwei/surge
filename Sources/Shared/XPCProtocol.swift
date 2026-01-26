@@ -354,7 +354,7 @@ public enum ThreatSeverity: String, Codable, Sendable {
 }
 
 /// Maintenance task
-public enum MaintenanceTask: String, Codable, Sendable {
+public enum MaintenanceTask: String, Codable, Sendable, CaseIterable {
     case rebuildSpotlight
     case rebuildLaunchServices
     case clearDNSCache

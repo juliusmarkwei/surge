@@ -21,7 +21,7 @@ struct SURGEApp: App {
             MenuBarView()
                 .environmentObject(appState)
         } label: {
-            MenuBarLabel()
+            MenuBarLabel(appState: appState)
         }
         .menuBarExtraStyle(.window)
 

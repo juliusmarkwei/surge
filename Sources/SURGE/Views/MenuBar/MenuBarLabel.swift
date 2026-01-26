@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MenuBarLabel: View {
 
-    @EnvironmentObject var appState: AppState
+    @ObservedObject var appState: AppState
 
     var body: some View {
         HStack(spacing: 4) {

@@ -208,14 +208,4 @@ struct MainWindowView: View {
 // SmartCareView is now in Views/SmartCare/SmartCareView.swift
 // StorageView is now in Views/Storage/StorageView.swift
 // PerformanceView is now in Views/Performance/PerformanceView.swift
-
-struct SecurityView: View {
-    var body: some View {
-        VStack {
-            Text("Security")
-                .font(.largeTitle)
-            Text("Malware scanner coming soon")
-                .foregroundColor(.secondary)
-        }
-    }
-}
+// SecurityView is now in Views/Security/SecurityView.swift

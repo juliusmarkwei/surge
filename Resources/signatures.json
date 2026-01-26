@@ -1,0 +1,127 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-01-26",
+  "malware": [
+    {
+      "id": "adload",
+      "name": "Adload Adware",
+      "type": "adware",
+      "severity": "medium",
+      "description": "Adware that injects advertisements into web browsers and modifies search results",
+      "pathPatterns": [
+        "*/Library/LaunchAgents/com.*.plist",
+        "*/Library/Application Support/.*"
+      ],
+      "namePatterns": ["adload", "searchbaron", "safefinder", "searchmine"],
+      "dateAdded": "2026-01-26",
+      "references": [
+        "https://www.malwarebytes.com/mac-adload"
+      ]
+    },
+    {
+      "id": "genio",
+      "name": "Genio/Genieo Adware",
+      "type": "adware",
+      "severity": "medium",
+      "description": "Adware that modifies browser settings, displays unwanted ads, and tracks browsing activity",
+      "namePatterns": ["genio", "genieo", "installmac"],
+      "bundleIdentifiers": ["com.genieo.*", "com.genieoinnovation.*"],
+      "dateAdded": "2026-01-26",
+      "references": [
+        "https://www.intego.com/mac-security-blog/how-to-remove-genieo-adware-from-your-mac/"
+      ]
+    },
+    {
+      "id": "shlayer",
+      "name": "Shlayer Trojan",
+      "type": "malware",
+      "severity": "high",
+      "description": "Trojan downloader that installs additional malware and adware on infected systems",
+      "namePatterns": ["shlayer", "bundlore"],
+      "dateAdded": "2026-01-26",
+      "references": [
+        "https://www.carbonblack.com/blog/shlayer-macos-malware/"
+      ]
+    },
+    {
+      "id": "xcsset",
+      "name": "XCSSET Malware",
+      "type": "malware",
+      "severity": "critical",
+      "description": "Malware targeting Xcode projects that steals credentials, takes screenshots, and modifies Safari",
+      "pathPatterns": ["*/Library/LaunchAgents/*.agent", "*/.xcassets/*"],
+      "namePatterns": ["xcsset"],
+      "dateAdded": "2026-01-26",
+      "references": [
+        "https://www.trendmicro.com/en_us/research/20/h/xcsset-mac-malware.html"
+      ]
+    },
+    {
+      "id": "pirrit",
+      "name": "Pirrit Adware",
+      "type": "adware",
+      "severity": "medium",
+      "description": "Aggressive adware that injects ads and tracks user behavior",
+      "namePatterns": ["pirrit", "maxofferdeals"],
+      "bundleIdentifiers": ["com.aahd.*"],
+      "dateAdded": "2026-01-26"
+    },
+    {
+      "id": "mughthesec",
+      "name": "Mughthesec Malware",
+      "type": "malware",
+      "severity": "high",
+      "description": "Backdoor malware providing remote access to infected systems",
+      "namePatterns": ["mughthesec", "cookieminer"],
+      "dateAdded": "2026-01-26"
+    },
+    {
+      "id": "mackeeper",
+      "name": "MacKeeper PUP",
+      "type": "adware",
+      "severity": "low",
+      "description": "Potentially Unwanted Program (PUP) that uses aggressive advertising tactics",
+      "namePatterns": ["mackeeper"],
+      "bundleIdentifiers": ["com.mackeeper.*", "com.zeobit.*"],
+      "dateAdded": "2026-01-26"
+    },
+    {
+      "id": "proton",
+      "name": "Proton RAT",
+      "type": "malware",
+      "severity": "critical",
+      "description": "Remote Access Trojan that steals passwords, cryptocurrency wallets, and sensitive data",
+      "namePatterns": ["proton", "calisto"],
+      "dateAdded": "2026-01-26",
+      "references": [
+        "https://www.welivesecurity.com/2017/02/21/osxproton-mac-backdoor/"
+      ]
+    }
+  ],
+  "extensions": [
+    {
+      "id": "fake-adblocker-1",
+      "name": "Fake Ad Blocker Extensions",
+      "description": "Malicious extensions disguised as legitimate ad blockers that inject ads instead",
+      "severity": "medium",
+      "extensionIDs": [],
+      "browsers": ["chrome", "safari", "firefox"]
+    },
+    {
+      "id": "cryptojacking-ext",
+      "name": "Cryptojacking Extensions",
+      "description": "Extensions that use your computer's resources to mine cryptocurrency",
+      "severity": "high",
+      "extensionIDs": [],
+      "browsers": ["chrome", "firefox"]
+    },
+    {
+      "id": "data-harvester",
+      "name": "Data Harvesting Extensions",
+      "description": "Extensions that collect and sell your browsing data",
+      "severity": "medium",
+      "extensionIDs": [],
+      "browsers": ["chrome", "safari", "firefox"]
+    }
+  ]
+}

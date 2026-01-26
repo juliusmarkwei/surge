@@ -375,6 +375,32 @@ public struct MaintenanceResult: Codable, Sendable {
     }
 }
 
+/// Smart Care aggregate result
+public struct SmartCareResult: Codable, Sendable {
+    public let cleanup: CleanupResult?
+    public let memory: MemoryOptimizationResult?
+    public let securityThreats: [SecurityThreat]?
+    public let totalSpaceFreed: UInt64
+    public let totalMemoryFreed: UInt64
+    public let threatsRemoved: Int
+    public let errors: [String]
+
+    public init(
+        cleanup: CleanupResult? = nil,
+        memory: MemoryOptimizationResult? = nil,
+        securityThreats: [SecurityThreat]? = nil,
+        errors: [String] = []
+    ) {
+        self.cleanup = cleanup
+        self.memory = memory
+        self.securityThreats = securityThreats
+        self.totalSpaceFreed = cleanup?.freedSpace ?? 0
+        self.totalMemoryFreed = memory?.freedMemory ?? 0
+        self.threatsRemoved = securityThreats?.count ?? 0
+        self.errors = errors
+    }
+}
+
 /// XPC errors
 public enum XPCError: Error, Codable, Sendable {
     case connectionFailed

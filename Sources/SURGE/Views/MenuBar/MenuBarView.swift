@@ -11,6 +11,7 @@ import Shared
 struct MenuBarView: View {
 
     @EnvironmentObject var appState: AppState
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(spacing: 0) {
@@ -102,7 +103,8 @@ struct MenuBarView: View {
     private var actionsSection: some View {
         VStack(spacing: 8) {
             Button {
-                appState.openMainWindow()
+                NSApp.activate(ignoringOtherApps: true)
+                openWindow(id: "main")
             } label: {
                 Label("Open SURGE", systemImage: "app.dashed")
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -110,7 +112,7 @@ struct MenuBarView: View {
             .buttonStyle(.plain)
 
             Button {
-                // Open settings
+                NSApp.activate(ignoringOtherApps: true)
                 NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
             } label: {
                 Label("Settings", systemImage: "gear")

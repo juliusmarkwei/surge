@@ -26,7 +26,7 @@ struct SURGEApp: App {
         .menuBarExtraStyle(.window)
 
         // Main window (hidden by default, shown on demand)
-        Window("SURGE", id: "main") {
+        WindowGroup(id: "main") {
             MainWindowView()
                 .environmentObject(appState)
                 .frame(minWidth: 800, minHeight: 600)
@@ -36,6 +36,7 @@ struct SURGEApp: App {
         .commands {
             CommandGroup(replacing: .newItem) {}
         }
+        .defaultPosition(.center)
 
         // Settings window
         Settings {

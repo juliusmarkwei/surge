@@ -113,9 +113,26 @@ class AppState: ObservableObject {
     // MARK: - Window Management
 
     func openMainWindow() {
-        if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "main" }) {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate(ignoringOtherApps: true)
+
+        // Try to find and activate the main window
+        for window in NSApp.windows {
+            if window.title == "SURGE" || window.identifier?.rawValue.contains("main") == true {
+                window.makeKeyAndOrderFront(nil)
+                return
+            }
         }
+
+        // If no window found, try to create one by triggering the window group
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if let window = NSApp.windows.first(where: { $0.title == "SURGE" }) {
+                window.makeKeyAndOrderFront(nil)
+            }
+        }
+    }
+
+    func openSettings() {
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 }

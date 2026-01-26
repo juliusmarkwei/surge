@@ -7,6 +7,7 @@
 
 import XCTest
 @testable import SURGE
+@testable import Shared
 
 final class CleanupCoordinatorTests: XCTestCase {
 

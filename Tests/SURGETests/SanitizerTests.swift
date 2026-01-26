@@ -7,6 +7,7 @@
 
 import XCTest
 @testable import Shared
+@testable import PrivilegedHelper
 
 final class SanitizerTests: XCTestCase {
 

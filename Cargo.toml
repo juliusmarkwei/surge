@@ -1,5 +1,5 @@
 [package]
-name = "surge-tui"
+name = "surge"
 version = "1.0.0"
 edition = "2021"
 authors = ["SURGE Contributors"]

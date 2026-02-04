@@ -11,6 +11,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Print colored output
@@ -33,14 +34,16 @@ print_error() {
 # Print banner
 print_banner() {
     echo ""
-    echo "  ####   #   #  ####    ####   ####"
-    echo " #      #   #  #   #  #      #"
-    echo "  ###   #   #  ####   # ###  ###"
-    echo "     #  #   #  #   #  #   #  #"
-    echo " ####    ###   #   #   ###   ####"
+    echo -e "${CYAN}"
+    echo "   -----       ____    _   _    ____     ____    ____"
+    echo "   -          / ___|  | | | |  |  _ \\   / ___|  | ___|"
+    echo "   ------     \\___ \\  | | | |  | |_) | | |  _   |  _|"
+    echo "   ----        ___) | | |_| |  |  _ <  | |_| |  | |___"
+    echo "   --         |____/   \\___/   |_| \\_\\  \\____|  |_____|"
+    echo "   -------"
+    echo -e "${NC}"
     echo ""
-    echo "  SURGE v1.0 - System Cleaner & Optimizer"
-    echo "  Installation Script"
+    echo -e "  ${GREEN}Version: 1.0.0${NC}  │  ${YELLOW}Released: 2026-02-04${NC}  │  ${CYAN}Created by: SURGE Contributors${NC}"
     echo ""
 }
 

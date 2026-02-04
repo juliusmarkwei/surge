@@ -39,14 +39,15 @@ print_error() {
 print_banner() {
     echo ""
     echo -e "${CYAN}"
-    echo "  ####   #   #  ####    ####   ####"
-    echo " #      #   #  #   #  #      #"
-    echo "  ###   #   #  ####   # ###  ###"
-    echo "     #  #   #  #   #  #   #  #"
-    echo " ####    ###   #   #   ###   ####"
+    echo "   -----       ____    _   _    ____     ____    ____"
+    echo "   -          / ___|  | | | |  |  _ \\   / ___|  | ___|"
+    echo "   ------     \\___ \\  | | | |  | |_) | | |  _   |  _|"
+    echo "   ----        ___) | | |_| |  |  _ <  | |_| |  | |___"
+    echo "   --         |____/   \\___/   |_| \\_\\  \\____|  |_____|"
+    echo "   -------"
     echo -e "${NC}"
-    echo "  SURGE v1.0 - System Cleaner & Optimizer"
-    echo "  Cross-platform TUI for macOS and Linux"
+    echo ""
+    echo -e "  ${GREEN}Version: 1.0.0${NC}  │  ${YELLOW}Released: 2026-02-04${NC}  │  ${CYAN}Created by: SURGE Contributors${NC}"
     echo ""
 }
 

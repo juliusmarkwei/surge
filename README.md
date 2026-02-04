@@ -15,13 +15,14 @@
 SURGE is a powerful, interactive terminal-based system cleaner built with Rust. It provides real-time scanning, visualization, and cleanup of your system storage with a rich Terminal User Interface (TUI).
 
 **Key Features:**
-- 🚀 Real-time storage scanning (like npkill)
+- 🚀 Real-time storage scanning and cleanup
+- 📊 Interactive disk usage visualization (TreeMap)
+- 🔍 File preview with support for text, images, videos, audio
 - 🔒 Multi-layer security validation
-- 🗑️ 30-day quarantine system for safe recovery
-- 🎨 Interactive TUI with keyboard navigation
+- 🎨 Beautiful terminal UI with fast navigation
 - 🌍 Cross-platform (macOS + Linux)
 - ⚡ High performance with async scanning
-- 🛡️ Built-in malware detection
+- ⌨️ Vim-style keyboard shortcuts
 
 ## Quick Install
 
@@ -46,11 +47,10 @@ See [Installation](#installation) for more options.
 
 ## Features
 
-### 1. Smart Care
-One-click optimization for common system cleanup tasks.
+### ✅ Implemented Features
 
-### 2. Storage Cleanup
-Category-based cleanup with real-time scanning:
+#### Storage Cleanup
+Interactive category-based cleanup with real-time scanning:
 - System Caches (`/Library/Caches`, `/System/Library/Caches`)
 - User Caches (`~/Library/Caches`)
 - Log Files (`/var/log`, `~/Library/Logs`)
@@ -58,24 +58,37 @@ Category-based cleanup with real-time scanning:
 - Downloads (`~/Downloads`)
 - Developer Caches (npm, yarn, cargo, gradle, Xcode)
 - Browser Data (Chrome, Firefox, Safari)
+- File selection with Space, a (all), n (none)
+- Preview before deletion
+- Sort by size (s key)
 
-### 3. Disk TreeMap
-Visual disk usage analyzer showing directory sizes recursively.
+#### Disk TreeMap
+Visual disk usage analyzer with interactive navigation:
+- Recursive directory scanning with depth limiting
+- Real-time size calculation and visualization
+- Navigate directories with Enter/Esc
+- File preview panel (toggle with 'p')
+- Text file preview (code, logs, subtitles)
+- Image metadata display
+- Video/Audio file information
+- Open files with system default app ('o' key)
+- Fast navigation (PageUp/PageDown, Ctrl+U/D)
 
-### 4. Duplicate Finder
-SHA-256 content-based duplicate file detection.
+#### Performance Monitor
+Real-time system statistics in status bar:
+- CPU usage percentage
+- RAM usage (used/total with percentage)
+- Disk usage (used/total with percentage)
+- Updates every 100ms
 
-### 5. Large/Old File Scanner
-Find files larger than 100MB or older than 1 year.
+### 🚧 Planned Features
 
-### 6. Performance Monitor
-Real-time CPU, RAM, and disk usage monitoring.
-
-### 7. Security Scanner
-Signature-based malware detection for persistence locations.
-
-### 8. System Maintenance
-Spotlight rebuild, DNS cache clear, and other maintenance tasks.
+The following features are planned for future releases:
+- Smart Care - One-click optimization
+- Duplicate Finder - SHA-256 content-based detection
+- Large/Old File Scanner - Find files by size and age
+- Security Scanner - Malware detection
+- System Maintenance - Spotlight rebuild, DNS cache clear
 
 ## Security Model
 
@@ -195,31 +208,51 @@ surge --debug
 ### Keyboard Shortcuts
 
 **Navigation:**
-- `↑↓` or `j/k` - Move up/down in lists
-- `←→` or `l` - Move left/right (tabs)
-- `1-8` - Jump to feature screen
-- `Esc` - Go back / Cancel
+- `↑↓` or `j/k` - Move up/down one item
+- `PageUp/PageDown` - Jump 10 items (fast navigation)
+- `Ctrl+U/Ctrl+D` - Jump 5 items (medium navigation)
+- `g` or `Home` - Go to home screen
+- `1-6` - Jump to feature screen
+- `Esc` - Go back one level
 - `q` - Quit application
 
-**Selection:**
+**Selection (Storage Cleanup):**
 - `Space` - Toggle item selection
 - `a` - Select all items
 - `n` - Select none
+- `s` - Sort by size (cycle: default → largest → smallest)
 
-**Actions:**
-- `Enter` - Confirm action / Start scan
-- `d` - Delete selected items
+**TreeMap Actions:**
+- `Enter` - Enter directory / Open file
+- `o` - Open file with system default app
+- `p` - Toggle preview panel
+- `Esc` - Go back to parent directory
+
+**Global:**
 - `h` or `?` - Show help screen
+- `Enter` - Confirm action / Start scan
+- `d` - Delete selected items (Storage Cleanup)
 
-### Example Workflow
+### Example Workflows
 
+**Storage Cleanup:**
 1. **Launch SURGE**: `surge`
 2. **Navigate to Storage Cleanup**: Press `2`
 3. **Start Scanning**: Press `Enter`
-4. **Review Items**: Use `↑↓` to navigate
+4. **Review Items**: Use `↑↓` or `PageUp/PageDown` to navigate
 5. **Select Items**: Press `Space` to toggle or `a` to select all
-6. **Confirm Deletion**: Press `Enter`
-7. **Recovery**: Items are in `/tmp/.SURGE-Quarantine` for 30 days
+6. **Sort (optional)**: Press `s` to sort by size
+7. **Confirm Deletion**: Press `Enter`
+8. **Recovery**: Items are in `/tmp/.SURGE-Quarantine` for 30 days
+
+**Disk TreeMap:**
+1. **Launch SURGE**: `surge`
+2. **Navigate to Disk TreeMap**: Press `3`
+3. **Browse Directories**: Press `Enter` to enter, `Esc` to go back
+4. **Fast Navigation**: Use `PageUp/PageDown` to jump quickly
+5. **Toggle Preview**: Press `p` to show/hide file preview
+6. **Open Files**: Press `o` to open with system default app
+7. **Go Home**: Press `g` to return to main menu
 
 ## Project Structure
 
@@ -308,35 +341,40 @@ cargo test -- --nocapture
 
 ## Roadmap
 
-### Phase 1: Foundation ✅
-- [x] Project structure
-- [x] Security modules (sanitizer, blacklist)
-- [x] Basic TUI with home screen
-- [x] System stats monitoring
+### ✅ Completed (v1.0)
+- [x] Project structure and Rust TUI framework
+- [x] Security modules (sanitizer, blacklist, quarantine)
+- [x] Interactive home screen with navigation
+- [x] Real-time system stats monitoring
+- [x] Storage cleanup with category scanning
+- [x] File selection UI with preview
+- [x] TreeMap visualization with interactive navigation
+- [x] File preview panel (text, images, videos, audio)
+- [x] Fast navigation (PageUp/PageDown, Ctrl+U/D)
+- [x] One-liner installation script
+- [x] Cross-platform support (macOS + Linux)
+- [x] Help system
+- [x] Documentation
 
-### Phase 2: Core Cleanup (Next)
-- [ ] Real-time category scanning
-- [ ] File selection UI
-- [ ] Delete with sudo integration
+### 🚧 In Progress
+- [ ] Delete operations with sudo integration
 - [ ] Quarantine implementation
+- [ ] Error recovery and handling
 
-### Phase 3: Advanced Features
-- [ ] TreeMap visualization
-- [ ] Duplicate finder (SHA-256)
-- [ ] Large/old file scanner
-- [ ] Performance monitoring
+### 📋 Planned Features
+- [ ] Smart Care - One-click optimization
+- [ ] Duplicate finder (SHA-256 content hashing)
+- [ ] Large/old file scanner (size and age filters)
+- [ ] Security scanner with malware signatures
+- [ ] System maintenance tasks (Spotlight, DNS cache)
+- [ ] Configuration file support
+- [ ] Export functionality (CSV, JSON reports)
 
-### Phase 4: Security & Maintenance
-- [ ] Malware scanner with signatures
-- [ ] Maintenance tasks
-- [ ] Help system
-- [ ] Error recovery
-
-### Phase 5: Polish
-- [ ] Cross-platform testing
-- [ ] Performance optimization
-- [ ] Package for distribution
-- [ ] Documentation
+### 🎯 Future Enhancements
+- [ ] Package for distribution (AUR, Homebrew)
+- [ ] Colorized themes
+- [ ] Plugin system for custom scanners
+- [ ] Scheduled scans (cron integration)
 
 ## Contributing
 

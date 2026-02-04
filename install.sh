@@ -268,6 +268,7 @@ print_instructions() {
     echo "  surge                    # Run SURGE"
     echo "  surge --preview          # Preview mode (dry-run)"
     echo "  surge --scan ~/Downloads # Scan specific directory"
+    echo "  surge --debug            # Show debug info on startup"
     echo "  surge --help             # Show help"
     echo ""
     echo -e "${CYAN}Keyboard Shortcuts:${NC}"

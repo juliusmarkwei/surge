@@ -32,6 +32,7 @@ pub struct App {
     pub current_screen: Screen,
     pub previous_screen: Option<Screen>,
     pub preview_mode: bool,
+    pub custom_scan_path: Option<PathBuf>,
     pub system_stats: SystemStats,
 
     // Home menu state
@@ -62,11 +63,15 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(preview_mode: bool) -> Self {
+    pub fn new(preview_mode: bool, custom_scan_path: Option<String>) -> Self {
+        // Convert custom scan path to PathBuf if provided
+        let scan_path = custom_scan_path.map(|p| PathBuf::from(p));
+
         Self {
             current_screen: Screen::Home,
             previous_screen: None,
             preview_mode,
+            custom_scan_path: scan_path,
             system_stats: SystemStats {
                 cpu_usage: 0.0,
                 memory_used: 0,
@@ -578,7 +583,10 @@ impl App {
         self.treemap_scanning = true;
         self.status_message = Some("Scanning directory tree...".to_string());
 
-        let scan_path = TreeMapScanner::get_default_scan_path();
+        // Use custom scan path if provided, otherwise use default
+        let scan_path = self.custom_scan_path.clone()
+            .unwrap_or_else(|| TreeMapScanner::get_default_scan_path());
+
         let (tx, rx) = channel();
         self.treemap_receiver = Some(rx);
 

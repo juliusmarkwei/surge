@@ -40,6 +40,21 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
+    // Debug mode - print startup info before TUI takes over
+    if args.debug {
+        eprintln!("SURGE v{} - Debug Mode Enabled", env!("CARGO_PKG_VERSION"));
+        eprintln!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        eprintln!("Preview mode: {}", args.preview);
+        if let Some(ref scan_path) = args.scan {
+            eprintln!("Custom scan path: {}", scan_path);
+        } else {
+            eprintln!("Scan path: Default (Home directory)");
+        }
+        eprintln!("Platform: {}", std::env::consts::OS);
+        eprintln!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+        std::thread::sleep(std::time::Duration::from_secs(2));
+    }
+
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -47,8 +62,13 @@ fn main() -> Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // Create app state
-    let mut app = App::new(args.preview);
+    // Create app state with optional custom scan path
+    let mut app = App::new(args.preview, args.scan.clone());
+
+    // If scan path was provided, auto-navigate to TreeMap and start scanning
+    if args.scan.is_some() {
+        app.navigate_to_screen(2); // 2 = Disk TreeMap
+    }
 
     // Run main event loop
     let res = run_app(&mut terminal, &mut app);

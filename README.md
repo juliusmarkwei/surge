@@ -41,10 +41,12 @@ curl -fsSL https://raw.githubusercontent.com/juliusmarkwei/surge/main/install.sh
 ## Usage
 
 ```bash
-surge                    # Run SURGE
-surge --preview          # Preview mode (dry-run)
-surge --scan ~/Downloads # Scan specific directory
-surge --help             # Show help
+surge                            # Run SURGE
+surge --preview                  # Preview mode (dry-run, no deletion)
+surge --scan ~/Downloads         # Scan specific directory
+surge --debug                    # Show debug information on startup
+surge --debug --scan ~/Projects  # Combine options
+surge --help                     # Show help
 ```
 
 ### Navigation

@@ -80,6 +80,12 @@ cargo build
 # Run
 cargo run
 
+# Run with command-line options
+cargo run -- --preview                  # Preview mode (no deletion)
+cargo run -- --scan ~/Downloads         # Scan specific directory
+cargo run -- --debug                    # Show debug info on startup
+cargo run -- --debug --scan ~/Projects  # Combine options
+
 # Run tests
 cargo test
 

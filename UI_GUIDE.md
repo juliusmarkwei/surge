@@ -1,8 +1,8 @@
-# SURGE v2.0 - UI Design Guide
+# SURGE v1.0 - UI Design Guide
 
-## New UI Features ✨
+## UI Features ✨
 
-The SURGE UI has been completely redesigned with a modern, professional terminal interface.
+SURGE features a modern, professional terminal interface with rich interactive elements.
 
 ### What's New
 

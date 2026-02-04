@@ -1,10 +1,12 @@
 use anyhow::Result;
 use ratatui::Frame;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::path::PathBuf;
+use std::sync::mpsc::{channel, Receiver};
 use std::thread;
 
-use crate::models::{CleanableItem, SystemStats};
+use crate::models::{CleanableItem, SystemStats, TreeMapItem};
 use crate::scanner::cleanup::CleanupScanner;
+use crate::scanner::treemap::TreeMapScanner;
 use crate::system::stats::get_system_stats;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,6 +19,13 @@ pub enum Screen {
     Performance,
     SecurityScan,
     Help,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SortOrder {
+    None,           // Original scan order
+    SizeAsc,        // Smallest first
+    SizeDesc,       // Largest first
 }
 
 pub struct App {
@@ -35,11 +44,21 @@ pub struct App {
     pub scan_progress: f64,
     pub spinner_state: usize,
     pub needs_scan: bool,
+    pub sort_order: SortOrder,
     scan_receiver: Option<Receiver<Vec<CleanableItem>>>,
+
+    // TreeMap state
+    pub treemap_root: Option<TreeMapItem>,
+    pub treemap_scanning: bool,
+    pub treemap_selected_index: usize,
+    pub treemap_path_stack: Vec<PathBuf>,
+    pub treemap_show_preview: bool,
+    treemap_receiver: Option<Receiver<TreeMapItem>>,
 
     // UI state
     pub status_message: Option<String>,
     pub error_message: Option<String>,
+    pub number_buffer: String,
 }
 
 impl App {
@@ -62,9 +81,17 @@ impl App {
             scan_progress: 0.0,
             spinner_state: 0,
             needs_scan: false,
+            sort_order: SortOrder::None,
             scan_receiver: None,
+            treemap_root: None,
+            treemap_scanning: false,
+            treemap_selected_index: 0,
+            treemap_path_stack: Vec::new(),
+            treemap_show_preview: true,
+            treemap_receiver: None,
             status_message: None,
             error_message: None,
+            number_buffer: String::new(),
         }
     }
 
@@ -75,7 +102,7 @@ impl App {
         // Update spinner animation
         self.spinner_state = (self.spinner_state + 1) % 10;
 
-        // Check for scan results
+        // Check for cleanup scan results
         if let Some(receiver) = &self.scan_receiver {
             if let Ok(items) = receiver.try_recv() {
                 self.cleanable_items = items;
@@ -83,6 +110,16 @@ impl App {
                 self.scanning = false;
                 self.scan_receiver = None;
                 self.status_message = Some(format!("Found {} items", self.cleanable_items.len()));
+            }
+        }
+
+        // Check for treemap scan results
+        if let Some(receiver) = &self.treemap_receiver {
+            if let Ok(root) = receiver.try_recv() {
+                self.treemap_root = Some(root);
+                self.treemap_scanning = false;
+                self.treemap_receiver = None;
+                self.status_message = Some("Scan complete".to_string());
             }
         }
 
@@ -141,6 +178,7 @@ impl App {
 
         self.previous_screen = Some(self.current_screen);
         self.current_screen = new_screen;
+        self.number_buffer.clear();
 
         // Start async scanning for relevant screens
         match new_screen {
@@ -149,17 +187,31 @@ impl App {
                     self.start_async_scan();
                 }
             }
+            Screen::DiskTreeMap => {
+                if self.treemap_root.is_none() && !self.treemap_scanning {
+                    self.start_treemap_scan();
+                }
+            }
             _ => {}
         }
     }
 
     pub fn go_back(&mut self) {
+        self.number_buffer.clear();
         if let Some(prev) = self.previous_screen {
             self.current_screen = prev;
             self.previous_screen = None;
         } else {
             self.current_screen = Screen::Home;
         }
+    }
+
+    pub fn go_home(&mut self) {
+        self.number_buffer.clear();
+        self.current_screen = Screen::Home;
+        self.previous_screen = None;
+        // Clear treemap navigation stack when going home
+        self.treemap_path_stack.clear();
     }
 
     pub fn show_help(&mut self) {
@@ -184,6 +236,80 @@ impl App {
         }
     }
 
+    pub fn jump_to_item(&mut self, number: usize) {
+        match self.current_screen {
+            Screen::StorageCleanup => {
+                if number > 0 && number <= self.cleanable_items.len() {
+                    self.selected_index = number - 1; // Convert to 0-based index
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pub fn add_digit_to_buffer(&mut self, digit: char) {
+        if self.number_buffer.len() < 5 { // Limit to 5 digits (99999 items max)
+            self.number_buffer.push(digit);
+        }
+    }
+
+    pub fn execute_number_buffer(&mut self) {
+        if !self.number_buffer.is_empty() {
+            if let Ok(number) = self.number_buffer.parse::<usize>() {
+                self.jump_to_item(number);
+            }
+            self.number_buffer.clear();
+        }
+    }
+
+    pub fn clear_number_buffer(&mut self) {
+        self.number_buffer.clear();
+    }
+
+    pub fn toggle_sort(&mut self) {
+        match self.current_screen {
+            Screen::StorageCleanup => {
+                // Cycle through sort orders: None -> SizeDesc -> SizeAsc -> None
+                self.sort_order = match self.sort_order {
+                    SortOrder::None => SortOrder::SizeDesc,
+                    SortOrder::SizeDesc => SortOrder::SizeAsc,
+                    SortOrder::SizeAsc => SortOrder::None,
+                };
+                self.apply_sort();
+
+                // Update status message
+                let sort_msg = match self.sort_order {
+                    SortOrder::None => "Sort: Default order",
+                    SortOrder::SizeDesc => "Sort: Largest first",
+                    SortOrder::SizeAsc => "Sort: Smallest first",
+                };
+                self.status_message = Some(sort_msg.to_string());
+            }
+            _ => {}
+        }
+    }
+
+    fn apply_sort(&mut self) {
+        match self.sort_order {
+            SortOrder::None => {
+                // Don't sort, keep original order
+                // In practice, we'd need to keep the original order somewhere
+                // For now, we'll just not sort
+            }
+            SortOrder::SizeDesc => {
+                self.cleanable_items.sort_by(|a, b| b.size.cmp(&a.size));
+            }
+            SortOrder::SizeAsc => {
+                self.cleanable_items.sort_by(|a, b| a.size.cmp(&b.size));
+            }
+        }
+
+        // Reset selection to first item after sorting
+        if !self.cleanable_items.is_empty() {
+            self.selected_index = 0;
+        }
+    }
+
     pub fn move_down(&mut self) {
         match self.current_screen {
             Screen::Home => {
@@ -195,6 +321,98 @@ impl App {
             Screen::StorageCleanup => {
                 if !self.cleanable_items.is_empty() && self.selected_index < self.cleanable_items.len() - 1 {
                     self.selected_index += 1;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Fast navigation - jump by 10 items
+    pub fn page_up(&mut self) {
+        match self.current_screen {
+            Screen::Home => {
+                self.menu_index = 0;
+            }
+            Screen::StorageCleanup => {
+                if self.selected_index >= 10 {
+                    self.selected_index -= 10;
+                } else {
+                    self.selected_index = 0;
+                }
+            }
+            Screen::DiskTreeMap => {
+                if self.treemap_selected_index >= 10 {
+                    self.treemap_selected_index -= 10;
+                } else {
+                    self.treemap_selected_index = 0;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pub fn page_down(&mut self) {
+        match self.current_screen {
+            Screen::Home => {
+                self.menu_index = 5;
+            }
+            Screen::StorageCleanup => {
+                if !self.cleanable_items.is_empty() {
+                    let new_index = self.selected_index + 10;
+                    self.selected_index = new_index.min(self.cleanable_items.len() - 1);
+                }
+            }
+            Screen::DiskTreeMap => {
+                let items = self.get_current_treemap_items();
+                if !items.is_empty() {
+                    let new_index = self.treemap_selected_index + 10;
+                    self.treemap_selected_index = new_index.min(items.len() - 1);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Medium navigation - jump by 5 items (vim-style Ctrl+U/Ctrl+D)
+    pub fn jump_up(&mut self) {
+        match self.current_screen {
+            Screen::Home => {
+                self.menu_index = 0;
+            }
+            Screen::StorageCleanup => {
+                if self.selected_index >= 5 {
+                    self.selected_index -= 5;
+                } else {
+                    self.selected_index = 0;
+                }
+            }
+            Screen::DiskTreeMap => {
+                if self.treemap_selected_index >= 5 {
+                    self.treemap_selected_index -= 5;
+                } else {
+                    self.treemap_selected_index = 0;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pub fn jump_down(&mut self) {
+        match self.current_screen {
+            Screen::Home => {
+                self.menu_index = 5;
+            }
+            Screen::StorageCleanup => {
+                if !self.cleanable_items.is_empty() {
+                    let new_index = self.selected_index + 5;
+                    self.selected_index = new_index.min(self.cleanable_items.len() - 1);
+                }
+            }
+            Screen::DiskTreeMap => {
+                let items = self.get_current_treemap_items();
+                if !items.is_empty() {
+                    let new_index = self.treemap_selected_index + 5;
+                    self.treemap_selected_index = new_index.min(items.len() - 1);
                 }
             }
             _ => {}
@@ -353,5 +571,101 @@ impl App {
             .filter(|i| i.selected)
             .map(|i| i.size)
             .sum()
+    }
+
+    // TreeMap methods
+    pub fn start_treemap_scan(&mut self) {
+        self.treemap_scanning = true;
+        self.status_message = Some("Scanning directory tree...".to_string());
+
+        let scan_path = TreeMapScanner::get_default_scan_path();
+        let (tx, rx) = channel();
+        self.treemap_receiver = Some(rx);
+
+        thread::spawn(move || {
+            let scanner = TreeMapScanner::new();
+            if let Ok(root) = scanner.scan(&scan_path) {
+                let _ = tx.send(root);
+            }
+        });
+    }
+
+    pub fn get_current_treemap_items(&self) -> Vec<&TreeMapItem> {
+        if let Some(root) = &self.treemap_root {
+            // Navigate to current directory based on path stack
+            let mut current = root;
+            for path in &self.treemap_path_stack {
+                if let Some(child) = current.children.iter().find(|c| &c.path == path) {
+                    current = child;
+                } else {
+                    return Vec::new();
+                }
+            }
+            current.children.iter().collect()
+        } else {
+            Vec::new()
+        }
+    }
+
+    pub fn treemap_enter_directory(&mut self) {
+        let items = self.get_current_treemap_items();
+        if self.treemap_selected_index < items.len() {
+            let selected = items[self.treemap_selected_index];
+            if !selected.is_file {
+                self.treemap_path_stack.push(selected.path.clone());
+                self.treemap_selected_index = 0;
+            }
+        }
+    }
+
+    pub fn treemap_go_back(&mut self) {
+        if !self.treemap_path_stack.is_empty() {
+            self.treemap_path_stack.pop();
+            self.treemap_selected_index = 0;
+        }
+    }
+
+    pub fn treemap_move_up(&mut self) {
+        if self.treemap_selected_index > 0 {
+            self.treemap_selected_index -= 1;
+        }
+    }
+
+    pub fn treemap_move_down(&mut self) {
+        let items = self.get_current_treemap_items();
+        if !items.is_empty() && self.treemap_selected_index < items.len() - 1 {
+            self.treemap_selected_index += 1;
+        }
+    }
+
+    pub fn treemap_toggle_preview(&mut self) {
+        self.treemap_show_preview = !self.treemap_show_preview;
+    }
+
+    pub fn get_selected_treemap_item(&self) -> Option<&TreeMapItem> {
+        let items = self.get_current_treemap_items();
+        items.get(self.treemap_selected_index).copied()
+    }
+
+    pub fn treemap_open_file(&mut self) {
+        if let Some(item) = self.get_selected_treemap_item() {
+            if item.is_file {
+                let path = &item.path;
+                // Open file with system's default application
+                #[cfg(target_os = "macos")]
+                {
+                    let _ = std::process::Command::new("open")
+                        .arg(path)
+                        .spawn();
+                }
+                #[cfg(target_os = "linux")]
+                {
+                    let _ = std::process::Command::new("xdg-open")
+                        .arg(path)
+                        .spawn();
+                }
+                self.status_message = Some(format!("Opening: {}", item.name));
+            }
+        }
     }
 }

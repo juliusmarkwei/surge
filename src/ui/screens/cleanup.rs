@@ -8,29 +8,29 @@ use ratatui::{
 };
 
 use crate::app::App;
+use crate::app::state::SortOrder;
+use crate::ui::common;
 
 pub fn render(frame: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
+            Constraint::Length(12), // Banner
             Constraint::Length(3),  // Title
             Constraint::Min(5),     // Items list
             Constraint::Length(4),  // Status/actions
         ])
         .split(area);
 
-    // Title
-    let title = if app.scanning {
-        format!("Storage Cleanup - {} Scanning...", app.get_spinner())
-    } else {
-        "Storage Cleanup".to_string()
-    };
+    // Render banner
+    common::render_banner(frame, chunks[0]);
 
-    let title_widget = Paragraph::new(title)
+    // Title (simple, no loading indicator)
+    let title_widget = Paragraph::new("Storage Cleanup")
         .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));
-    frame.render_widget(title_widget, chunks[0]);
+    frame.render_widget(title_widget, chunks[1]);
 
     // Items list
     if app.cleanable_items.is_empty() {
@@ -42,7 +42,7 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
         let empty = Paragraph::new(message)
             .alignment(Alignment::Center)
             .block(Block::default().borders(Borders::ALL).title("Items"));
-        frame.render_widget(empty, chunks[1]);
+        frame.render_widget(empty, chunks[2]);
     } else {
         let items: Vec<ListItem> = app
             .cleanable_items
@@ -82,15 +82,23 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
             })
             .collect();
 
+        // Create title with sort indicator
+        let sort_indicator = match app.sort_order {
+            SortOrder::None => "",
+            SortOrder::SizeDesc => " [↓ Size]",
+            SortOrder::SizeAsc => " [↑ Size]",
+        };
+        let list_title = format!("Items (Space=Toggle, a=All, n=None, s=Sort){}", sort_indicator);
+
         let list = List::new(items)
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title("Items (Space=Toggle, a=All, n=None, Enter=Confirm)"),
+                    .title(list_title),
             )
             .highlight_style(
                 Style::default()
-                    .bg(Color::DarkGray)
+                    .bg(Color::Rgb(30, 30, 30))  // Very subtle dark gray background
                     .add_modifier(Modifier::BOLD),
             );
 
@@ -98,7 +106,7 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
         let mut list_state = ListState::default();
         list_state.select(Some(app.selected_index));
 
-        frame.render_stateful_widget(list, chunks[1], &mut list_state);
+        frame.render_stateful_widget(list, chunks[2], &mut list_state);
     }
 
     // Status and actions
@@ -115,6 +123,18 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
         ]),
     ];
 
+    // Show number buffer if user is typing
+    if !app.number_buffer.is_empty() {
+        status_lines.push(Line::from(vec![
+            Span::styled("Jump to item: ", Style::default().fg(Color::Cyan)),
+            Span::styled(
+                &app.number_buffer,
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(" (press Enter)", Style::default().fg(Color::Gray)),
+        ]));
+    }
+
     // Show status or error messages
     if let Some(msg) = &app.status_message {
         status_lines.push(Line::from(Span::styled(
@@ -130,15 +150,19 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
     }
 
     status_lines.push(Line::from(vec![
+        Span::styled("[PgUp/PgDn] ", Style::default().fg(Color::Yellow)),
+        Span::raw("Fast  "),
+        Span::styled("[Ctrl+U/D] ", Style::default().fg(Color::Yellow)),
+        Span::raw("Jump  "),
+        Span::styled("[s] ", Style::default().fg(Color::Cyan)),
+        Span::raw("Sort  "),
         Span::styled("[Enter] ", Style::default().fg(Color::Green)),
-        Span::raw("Clean  "),
-        Span::styled("[Esc] ", Style::default().fg(Color::Red)),
-        Span::raw("Back"),
+        Span::raw("Clean"),
     ]));
 
     let status = Paragraph::new(status_lines)
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));
 
-    frame.render_widget(status, chunks[2]);
+    frame.render_widget(status, chunks[3]);
 }

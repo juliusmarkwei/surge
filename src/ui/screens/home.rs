@@ -7,16 +7,7 @@ use ratatui::{
 };
 
 use crate::app::App;
-
-// ASCII art banner using line characters (like npkill)
-const SURGE_BANNER: &str = r#"
-   -----       ____    _   _    ____     ____    ____
-   -          / ___|  | | | |  |  _ \   / ___|  | ___|
-   ------     \___ \  | | | |  | |_) | | |  _   |  _|
-   ----        ___) | | |_| |  |  _ <  | |_| |  | |___
-   --         |____/   \___/   |_| \_\  \____|  |_____|
-   -------
-"#;
+use crate::ui::common;
 
 pub fn render(frame: &mut Frame, app: &App, area: Rect) {
     // Create main layout
@@ -33,7 +24,7 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
         .split(area);
 
     // Render banner
-    render_banner(frame, chunks[0]);
+    common::render_banner(frame, chunks[0]);
 
     // Split content area into two columns
     let content_chunks = Layout::default()
@@ -54,47 +45,6 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
     render_status_bar(frame, app, chunks[2]);
 }
 
-fn render_banner(frame: &mut Frame, area: Rect) {
-    // Split the banner into multiple lines and style each one
-    let mut banner_lines: Vec<Line> = SURGE_BANNER
-        .lines()
-        .map(|line| {
-            Line::from(Span::styled(
-                line.to_string(),
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            ))
-        })
-        .collect();
-
-    // Add blank line for spacing
-    banner_lines.push(Line::from(""));
-
-    // Add the info line
-    banner_lines.push(Line::from(vec![
-        Span::styled("  Version: ", Style::default().fg(Color::Gray)),
-        Span::styled("2.0.0", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-        Span::styled("  │  ", Style::default().fg(Color::DarkGray)),
-        Span::styled("Released: ", Style::default().fg(Color::Gray)),
-        Span::styled("2026-02-04", Style::default().fg(Color::Yellow)),
-        Span::styled("  │  ", Style::default().fg(Color::DarkGray)),
-        Span::styled("Created by: ", Style::default().fg(Color::Gray)),
-        Span::styled("SURGE Contributors", Style::default().fg(Color::Magenta).add_modifier(Modifier::ITALIC)),
-    ]));
-
-    let banner = Paragraph::new(banner_lines)
-        .alignment(Alignment::Left)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_type(BorderType::Rounded)
-                .border_style(Style::default().fg(Color::Cyan)),
-        );
-
-    frame.render_widget(banner, area);
-}
-
 fn render_menu(frame: &mut Frame, app: &App, area: Rect) {
     let menu_items = vec![
         ("1", "Storage Cleanup", "Clean caches & junk files"),
@@ -105,57 +55,118 @@ fn render_menu(frame: &mut Frame, app: &App, area: Rect) {
         ("6", "Security Scan", "Malware detection"),
     ];
 
-    let items: Vec<ListItem> = menu_items
-        .iter()
-        .enumerate()
-        .map(|(idx, (num, title, desc))| {
-            let is_selected = idx == app.menu_index;
+    let max_width = area.width.saturating_sub(4); // Account for borders
 
-            let (prefix, num_style, title_style) = if is_selected {
-                (
-                    "▶ ",
-                    Style::default()
-                        .fg(Color::Black)
-                        .bg(Color::Cyan)
-                        .add_modifier(Modifier::BOLD),
-                    Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::BOLD),
-                )
-            } else {
-                (
-                    "  ",
-                    Style::default()
-                        .fg(Color::Cyan),
-                    Style::default()
-                        .fg(Color::White),
-                )
-            };
+    // Calculate vertical centering
+    let available_height = area.height.saturating_sub(3); // Account for borders and title
+    let num_items = menu_items.len();
+    let spacing_per_item = 1; // Empty line between items
+    let total_content_height = num_items + (num_items - 1) * spacing_per_item; // Items + spacing
+    let top_padding = if available_height > total_content_height as u16 {
+        (available_height - total_content_height as u16) / 2
+    } else {
+        0
+    };
 
-            ListItem::new(Line::from(vec![
-                Span::raw(prefix),
-                Span::styled(format!("[{}] ", num), num_style),
-                Span::styled(*title, title_style),
-                Span::styled(" - ", Style::default().fg(Color::DarkGray)),
-                Span::styled(*desc, Style::default().fg(Color::Gray)),
-            ]))
-        })
-        .collect();
+    let mut items: Vec<ListItem> = Vec::new();
 
-    let menu = List::new(items).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded)
-            .border_style(Style::default().fg(Color::Blue))
-            .title(" Features ")
-            .title_style(
+    // Add top padding for vertical centering
+    for _ in 0..top_padding {
+        items.push(ListItem::new(Line::from("")));
+    }
+
+    // Add friendly header message
+    let header_msg = "What would you like to do?";
+    let header_len = header_msg.len() as u16;
+    let header_padding = if max_width > header_len {
+        (max_width - header_len) / 2
+    } else {
+        0
+    };
+    let header_pad = " ".repeat(header_padding as usize);
+
+    items.push(ListItem::new(Line::from(vec![
+        Span::raw(header_pad),
+        Span::styled(
+            header_msg,
+            Style::default()
+                .fg(Color::Gray)
+                .add_modifier(Modifier::ITALIC),
+        ),
+    ])));
+
+    // Add spacing after header
+    items.push(ListItem::new(Line::from("")));
+    items.push(ListItem::new(Line::from("")));
+
+    // Add menu items with spacing
+    for (idx, (_num, title, desc)) in menu_items.iter().enumerate() {
+        let is_selected = idx == app.menu_index;
+
+        let (prefix, title_style) = if is_selected {
+            (
+                "▶ ",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
-            ),
-    );
+            )
+        } else {
+            (
+                "  ",
+                Style::default()
+                    .fg(Color::White),
+            )
+        };
 
-    frame.render_widget(menu, area);
+        // Calculate the content length for this specific line (without numbers)
+        let content = format!("{}{} - {}", prefix, title, desc);
+        let content_len = content.len() as u16;
+
+        // Calculate padding to center this line
+        let left_padding = if max_width > content_len {
+            (max_width - content_len) / 2
+        } else {
+            0
+        };
+        let padding = " ".repeat(left_padding as usize);
+
+        let item = ListItem::new(Line::from(vec![
+            Span::raw(padding),  // Center this line
+            Span::raw(prefix),
+            Span::styled(*title, title_style),
+            Span::styled(" - ", Style::default().fg(Color::DarkGray)),
+            Span::styled(*desc, Style::default().fg(Color::Gray)),
+        ]));
+
+        items.push(item);
+
+        // Add spacing between items (except after the last item)
+        if idx < menu_items.len() - 1 {
+            items.push(ListItem::new(Line::from("")));
+        }
+    }
+
+    // Create list state for highlighting
+    let mut list_state = ListState::default();
+    // Calculate the visual index including spacers and header
+    // top_padding + header line + 2 blank lines after header + (menu_index * 2 for item + spacer)
+    let visual_index = top_padding as usize + 3 + (app.menu_index * 2); // +3 for header and 2 blank lines
+    list_state.select(Some(visual_index));
+
+    let menu = List::new(items)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(Color::Blue)),
+        )
+        .highlight_style(
+            Style::default()
+                .bg(Color::Rgb(30, 30, 30))
+                .add_modifier(Modifier::BOLD),
+        );
+
+    frame.render_stateful_widget(menu, area, &mut list_state);
 }
 
 fn render_info(frame: &mut Frame, area: Rect) {

@@ -1,8 +1,8 @@
-# SURGE v2.0 - Demo & Screenshots
+# SURGE v1.0 - Demo & Screenshots
 
 ## Running the Application
 
-To run SURGE v2.0, use an interactive terminal:
+To run SURGE v1.0, use an interactive terminal:
 
 ```bash
 cargo run
@@ -23,7 +23,7 @@ cargo run
 │         #  #   #  #   #  #   #  #                           │
 │     ####    ###   #   #   ###   ####                        │
 │                                                              │
-│    Version: 2.0.0  │  Released: 2026-02-04  │              │
+│    Version: 1.0.0  │  Released: 2026-02-04  │              │
 │    Created by: SURGE Contributors                           │
 └──────────────────────────────────────────────────────────────┘
 ┌────────────────────────┬─────────────────────────────────────┐
@@ -141,18 +141,15 @@ The status bar shows live system information:
 
 ## Current Status
 
-**Phase 1 (Foundation): ✅ Complete**
+**Version 1.0: ✅ Production Ready**
 - All screens created and navigable
 - Keyboard shortcuts working
 - Real-time system stats
 - Security layer implemented
 - Scanner ready
-
-**Phase 2 (Core Cleanup): 🚧 Next**
-- Connect scanner to UI
-- Real-time file scanning
-- Actual file deletion
+- File scanning and deletion
 - Quarantine system
+- Cross-platform support (macOS + Linux)
 
 ## Try It Yourself!
 

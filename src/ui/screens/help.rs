@@ -7,19 +7,27 @@ use ratatui::{
 };
 
 use crate::app::App;
+use crate::ui::common;
 
 pub fn render(frame: &mut Frame, _app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Min(10)])
+        .constraints([
+            Constraint::Length(12), // Banner
+            Constraint::Length(3),  // Title
+            Constraint::Min(10),    // Content
+        ])
         .split(area);
+
+    // Render banner
+    common::render_banner(frame, chunks[0]);
 
     // Title
     let title = Paragraph::new("SURGE - Help")
         .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));
-    frame.render_widget(title, chunks[0]);
+    frame.render_widget(title, chunks[1]);
 
     // Help content
     let help_items = vec![
@@ -58,5 +66,5 @@ pub fn render(frame: &mut Frame, _app: &App, area: Rect) {
     let help_list = List::new(help_items)
         .block(Block::default().borders(Borders::ALL).title("Keyboard Shortcuts"));
 
-    frame.render_widget(help_list, chunks[1]);
+    frame.render_widget(help_list, chunks[2]);
 }

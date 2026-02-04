@@ -1,8 +1,8 @@
-# SURGE v2.0 - Quick Start Guide
+# SURGE v1.0 - Quick Start Guide
 
 ## What We've Built
 
-SURGE v2.0 is a **complete rewrite** from Swift/SwiftUI to **Rust** with a terminal-based interface. Phase 1 (Foundation) is complete!
+SURGE v1.0 is a powerful **cross-platform system cleaner** built with **Rust** and a terminal-based interface!
 
 ### ✅ Completed (Phase 1)
 
@@ -81,9 +81,9 @@ cargo test
 
 ## Project Status
 
-**Current Phase:** Phase 1 Complete ✅
-**Next Phase:** Phase 2 - Core Cleanup
-**Timeline:** ~4 weeks to full feature parity with v1.0
+**Current Version:** v1.0 ✅
+**Status:** Production Ready
+**Platform:** macOS + Linux
 
 ## Keyboard Shortcuts
 
@@ -209,21 +209,20 @@ Current build stats:
 - **Memory usage**: <10MB (TUI only)
 - **Startup time**: <100ms
 
-## Migration Notes from v1.0
+## Core Features
 
-### What Changed
-- ❌ Removed: XPC, privileged helper daemon
-- ❌ Removed: SwiftUI, macOS-only
-- ✅ Added: Cross-platform (Linux support)
-- ✅ Added: Terminal UI (Ratatui)
-- ✅ Added: Simpler privilege model
-
-### What Stayed
-- ✅ Path sanitization logic (ported)
+### Security
+- ✅ Path sanitization & validation
 - ✅ Security-first approach
 - ✅ 7-day age protection
-- ✅ Quarantine system design
-- ✅ All 7 major features
+- ✅ Quarantine system
+- ✅ Multi-layer security checks
+
+### Platform Support
+- ✅ Cross-platform (macOS + Linux)
+- ✅ Terminal UI (Ratatui)
+- ✅ Simple privilege model
+- ✅ Real-time system monitoring
 
 ## Troubleshooting
 
@@ -264,6 +263,6 @@ The codebase is clean and ready for development:
 
 ---
 
-**Status**: Phase 1 Complete ✅
-**Next**: Implement real-time scanning in Phase 2
-**ETA**: 4 weeks to feature parity with v1.0
+**Status**: Production Ready ✅
+**Version**: 1.0.0
+**Platform**: macOS + Linux

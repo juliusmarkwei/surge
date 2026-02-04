@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SURGE v2.0 is a free, open-source **cross-platform terminal-based system cleaner** for macOS and Linux, built with **Rust + Ratatui + Crossterm**. It provides an interactive TUI (Terminal User Interface) similar to npkill for real-time system cleanup.
+SURGE v1.0 is a free, open-source **cross-platform terminal-based system cleaner** for macOS and Linux, built with **Rust + Ratatui + Crossterm**. It provides an interactive TUI (Terminal User Interface) similar to npkill for real-time system cleanup.
 
 ## Essential Commands
 
@@ -319,7 +319,7 @@ cargo test --test integration_test
 ## File Organization
 
 ```
-SURGE v2.0/
+SURGE v1.0/
 ├── src/                       # Source code
 ├── tests/                     # Integration tests
 ├── Scripts/                   # Build scripts

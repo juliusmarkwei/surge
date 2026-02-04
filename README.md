@@ -1,4 +1,4 @@
-# SURGE v2.0 - Terminal TUI System Cleaner
+# SURGE v1.0 - Terminal TUI System Cleaner
 
 <div align="center">
 
@@ -84,7 +84,7 @@ SURGE implements **five layers of security**:
 - Timestamped filenames for tracking
 
 ### 4. Privilege Separation
-- No persistent root daemon (unlike v1.0)
+- No persistent root daemon required
 - Uses `sudo` for one-shot operations when needed
 - User-level operations don't require elevation
 
@@ -237,26 +237,20 @@ cargo test -- --nocapture
 - Logs: `/var/log`
 - Trash: `~/.local/share/Trash`
 
-## Differences from v1.0 (SwiftUI)
+## Architecture Highlights
 
-### Removed
-- ❌ XPC client-server architecture
-- ❌ Persistent privileged helper daemon
-- ❌ Code signature validation
-- ❌ macOS-only support
-
-### Added
+### Core Features
 - ✅ Cross-platform support (macOS + Linux)
 - ✅ Terminal-based interactive UI
 - ✅ Real-time scanning with progress
-- ✅ Simpler privilege model (sudo for one-shot operations)
+- ✅ Simple privilege model (sudo for one-shot operations)
 - ✅ Async scanning with Tokio
 
-### Preserved
+### Security Features
 - ✅ Path sanitization & security validation
 - ✅ Age-based protection (7-day rule)
 - ✅ Quarantine system (30-day retention)
-- ✅ All 7 major features
+- ✅ Multi-layer security checks
 - ✅ Blacklist/whitelist system
 
 ## Roadmap
@@ -303,8 +297,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 - Inspired by [npkill](https://github.com/voidcosmos/npkill) for real-time scanning UI
 - Built with [Ratatui](https://github.com/ratatui-org/ratatui) for the awesome TUI framework
-- Original SURGE v1.0 SwiftUI implementation for feature inspiration
 
 ---
 
-**Note:** SURGE v2.0 is a complete rewrite from Swift/SwiftUI to Rust with a terminal-based interface. All core security features have been preserved and enhanced for cross-platform support.
+**Note:** SURGE is a powerful cross-platform system cleaner built with Rust, featuring a terminal-based interface with comprehensive security features for safe system maintenance.

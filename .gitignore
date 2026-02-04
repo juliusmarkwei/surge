@@ -64,3 +64,16 @@ fastlane/test_output
 
 # Code Injection
 iOSInjectionProject/
+
+# Rust
+/target
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

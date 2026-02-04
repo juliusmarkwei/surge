@@ -128,14 +128,19 @@ build_release() {
 
     cd "$INSTALL_DIR"
 
-    if cargo build --release 2>&1 | grep -q "error"; then
-        print_error "Build failed"
-        echo ""
-        echo "Please check the error above and try again."
-        echo "You can manually build by running:"
-        echo "  cd $INSTALL_DIR"
-        echo "  cargo build --release"
-        exit 1
+    # Build and suppress warnings, only show errors and progress
+    if ! cargo build --release 2>&1 | grep -v "warning:" | grep -E "Compiling|Finished|error" > /tmp/surge-build.log; then
+        if grep -q "error" /tmp/surge-build.log; then
+            print_error "Build failed"
+            echo ""
+            cat /tmp/surge-build.log
+            echo ""
+            echo "Please check the error above and try again."
+            echo "You can manually build by running:"
+            echo "  cd $INSTALL_DIR"
+            echo "  cargo build --release"
+            exit 1
+        fi
     fi
 
     print_success "Build completed successfully"

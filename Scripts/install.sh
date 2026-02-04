@@ -98,7 +98,7 @@ build_release() {
     print_info "Building SURGE in release mode..."
     echo ""
 
-    if cargo build --release; then
+    if cargo build --release 2>&1 | grep -v "warning:" | grep -E "Compiling|Finished|error"; then
         print_success "Build completed successfully"
     else
         print_error "Build failed"
@@ -202,10 +202,10 @@ print_instructions() {
     echo ""
     echo "To run SURGE, use:"
     echo ""
-    echo "  ${GREEN}surge${NC}                    # Run the application"
-    echo "  ${GREEN}surge --preview${NC}          # Preview mode (dry-run)"
-    echo "  ${GREEN}surge --scan ~/Downloads${NC} # Scan specific directory"
-    echo "  ${GREEN}surge --help${NC}             # Show help"
+    echo -e "  ${GREEN}surge${NC}                    # Run the application"
+    echo -e "  ${GREEN}surge --preview${NC}          # Preview mode (dry-run)"
+    echo -e "  ${GREEN}surge --scan ~/Downloads${NC} # Scan specific directory"
+    echo -e "  ${GREEN}surge --help${NC}             # Show help"
     echo ""
     echo "Keyboard shortcuts:"
     echo "  1-8      Jump to features"

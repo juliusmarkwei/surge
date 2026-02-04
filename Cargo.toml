@@ -36,6 +36,10 @@ dirs = "5.0"
 image = "0.24"
 viuer = "0.7"
 
+[[bin]]
+name = "surge"
+path = "src/main.rs"
+
 [dev-dependencies]
 tempfile = "3.8"
 

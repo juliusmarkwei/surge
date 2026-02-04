@@ -1,9 +1,22 @@
 # SURGE v1.0 - Demo & Screenshots
 
+## Installation
+
+Install SURGE with one command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/juliusmarkwei/surge/main/install.sh | bash
+```
+
 ## Running the Application
 
-To run SURGE v1.0, use an interactive terminal:
+After installation, run SURGE:
 
+```bash
+surge
+```
+
+Or run from source:
 ```bash
 cargo run
 # or

@@ -34,13 +34,38 @@ SURGE v1.0 is a powerful **cross-platform system cleaner** built with **Rust** a
    - 8 cleanup categories
    - Platform-specific path resolution
 
-## Running the App
+## Installation
 
-### First Time Setup
+### Quick Install (One-liner)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/juliusmarkwei/surge/main/install.sh | bash
+```
+
+After installation, run:
+```bash
+surge
+```
+
+### Alternative: From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/juliusmarkwei/surge.git
+cd surge
+
+# Run installation script
+./install.sh
+
+# Run SURGE
+surge
+```
+
+### Manual Setup
 
 ```bash
 # The project is already set up!
-cd /Users/mac/Develop/surge
+cd surge
 
 # Build and run
 ./Scripts/run.sh

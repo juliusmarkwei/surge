@@ -23,6 +23,19 @@ SURGE is a powerful, interactive terminal-based system cleaner built with Rust. 
 - ⚡ High performance with async scanning
 - 🛡️ Built-in malware detection
 
+## Quick Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/juliusmarkwei/surge/main/install.sh | bash
+```
+
+Run SURGE:
+```bash
+surge
+```
+
+See [Installation](#installation) for more options.
+
 ## Technology Stack
 
 - **Rust** - Systems programming language for performance and safety
@@ -101,24 +114,64 @@ SURGE implements **five layers of security**:
 
 ## Installation
 
-### From Source
+### Quick Install (Recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/juliusmarkwei/surge/main/install.sh | bash
+```
+
+This one-liner will:
+- ✅ Check prerequisites (Git, Rust)
+- ✅ Clone repository to `~/.surge`
+- ✅ Build SURGE in release mode
+- ✅ Install binary to `/usr/local/bin` or `~/.cargo/bin`
+- ✅ Create desktop entry (Linux only)
+- ✅ Verify installation
+
+**Uninstall:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/juliusmarkwei/surge/main/install.sh | bash -s -- --uninstall
+```
+
+This removes:
+- ✅ Binary from `/usr/local/bin/surge` or `~/.cargo/bin/surge`
+- ✅ Desktop entry (Linux)
+- ✅ Source directory `~/.surge` (with confirmation)
+
+### Alternative: From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/surge-tui.git
-cd surge-tui
+git clone https://github.com/juliusmarkwei/surge.git
+cd surge
+
+# Run the installation script
+./install.sh
+```
+
+### Manual Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/juliusmarkwei/surge.git
+cd surge
 
 # Build with Cargo
 cargo build --release
 
+# Install manually
+sudo cp target/release/surge /usr/local/bin/surge
+sudo chmod +x /usr/local/bin/surge
+
 # Run
-./target/release/surge-tui
+surge
 ```
 
-### Using Cargo
+### Using Cargo (Future)
 
 ```bash
-cargo install surge-tui
+# Once published to crates.io
+cargo install surge
 ```
 
 ## Usage
@@ -127,16 +180,16 @@ cargo install surge-tui
 
 ```bash
 # Run the application
-surge-tui
+surge
 
 # Preview mode (dry-run, no deletion)
-surge-tui --preview
+surge --preview
 
 # Scan a specific directory
-surge-tui --scan ~/Downloads
+surge --scan ~/Downloads
 
 # Enable debug logging
-surge-tui --debug
+surge --debug
 ```
 
 ### Keyboard Shortcuts
@@ -160,7 +213,7 @@ surge-tui --debug
 
 ### Example Workflow
 
-1. **Launch SURGE**: `surge-tui`
+1. **Launch SURGE**: `surge`
 2. **Navigate to Storage Cleanup**: Press `2`
 3. **Start Scanning**: Press `Enter`
 4. **Review Items**: Use `↑↓` to navigate
@@ -171,7 +224,7 @@ surge-tui --debug
 ## Project Structure
 
 ```
-surge-tui/
+surge/
 ├── src/
 │   ├── main.rs                    # Entry point, event loop
 │   ├── app/

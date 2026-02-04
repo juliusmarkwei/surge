@@ -77,3 +77,6 @@ Cargo.lock
 *.swp
 *.swo
 *~
+
+# Development documentation (keep local only)
+CLAUDE.md

@@ -104,7 +104,7 @@ pub struct DuplicateGroup {
     pub hash: String,
     pub files: Vec<DuplicateFile>,
     pub total_size: u64,
-    pub wasted_size: u64, // size - size of one file
+    pub duplicate_size: u64, // size - size of one file (space used by duplicates)
 }
 
 #[derive(Debug, Clone)]

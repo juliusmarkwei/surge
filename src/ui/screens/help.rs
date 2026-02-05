@@ -36,7 +36,9 @@ pub fn render(frame: &mut Frame, _app: &App, area: Rect) {
         ])),
         ListItem::new("  ↑↓ or j/k     - Move up/down in lists"),
         ListItem::new("  ←→ or h/l     - Move left/right (tabs)"),
-        ListItem::new("  1-8           - Jump to feature screen"),
+        ListItem::new("  1-2           - Jump to feature (Storage/TreeMap)"),
+        ListItem::new("  g             - Go home"),
+        ListItem::new("  PageUp/Down   - Fast scroll"),
         ListItem::new(""),
         ListItem::new(Line::from(vec![
             Span::styled("Selection Keys", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
@@ -48,8 +50,11 @@ pub fn render(frame: &mut Frame, _app: &App, area: Rect) {
         ListItem::new(Line::from(vec![
             Span::styled("Action Keys", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
         ])),
-        ListItem::new("  Enter         - Confirm action"),
+        ListItem::new("  Enter         - Confirm action / Open dir"),
         ListItem::new("  d             - Delete selected"),
+        ListItem::new("  s             - Sort items"),
+        ListItem::new("  p             - Toggle preview (TreeMap)"),
+        ListItem::new("  o             - Open file (TreeMap)"),
         ListItem::new(""),
         ListItem::new(Line::from(vec![
             Span::styled("Global Keys", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),

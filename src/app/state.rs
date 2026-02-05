@@ -4,8 +4,10 @@ use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver};
 use std::thread;
 
-use crate::models::{CleanableItem, SystemStats, TreeMapItem};
+use crate::models::{CleanableItem, DuplicateGroup, LargeFileItem, SystemStats, TreeMapItem};
 use crate::scanner::cleanup::CleanupScanner;
+use crate::scanner::duplicates::DuplicateScanner;
+use crate::scanner::large_files::LargeFileScanner;
 use crate::scanner::treemap::TreeMapScanner;
 use crate::system::stats::get_system_stats;
 
@@ -56,6 +58,21 @@ pub struct App {
     pub treemap_show_preview: bool,
     treemap_receiver: Option<Receiver<TreeMapItem>>,
 
+    // Duplicate Finder state
+    pub duplicate_groups: Vec<DuplicateGroup>,
+    pub duplicate_scanning: bool,
+    pub duplicate_selected_group: usize,
+    pub duplicate_selected_file: usize,
+    duplicate_receiver: Option<Receiver<Vec<DuplicateGroup>>>,
+
+    // Large Files state
+    pub large_files: Vec<LargeFileItem>,
+    pub large_files_scanning: bool,
+    pub large_files_selected_index: usize,
+    pub large_files_min_size: u64,    // Minimum size filter (bytes)
+    pub large_files_min_age: u64,     // Minimum age filter (days)
+    large_files_receiver: Option<Receiver<Vec<LargeFileItem>>>,
+
     // UI state
     pub status_message: Option<String>,
     pub error_message: Option<String>,
@@ -94,6 +111,17 @@ impl App {
             treemap_path_stack: Vec::new(),
             treemap_show_preview: true,
             treemap_receiver: None,
+            duplicate_groups: Vec::new(),
+            duplicate_scanning: false,
+            duplicate_selected_group: 0,
+            duplicate_selected_file: 0,
+            duplicate_receiver: None,
+            large_files: Vec::new(),
+            large_files_scanning: false,
+            large_files_selected_index: 0,
+            large_files_min_size: 1024 * 1024 * 100, // 100 MB default
+            large_files_min_age: 0, // No age filter by default
+            large_files_receiver: None,
             status_message: None,
             error_message: None,
             number_buffer: String::new(),
@@ -125,6 +153,39 @@ impl App {
                 self.treemap_scanning = false;
                 self.treemap_receiver = None;
                 self.status_message = Some("Scan complete".to_string());
+            }
+        }
+
+        // Check for duplicate scan results
+        if let Some(receiver) = &self.duplicate_receiver {
+            if let Ok(groups) = receiver.try_recv() {
+                let total_duplicate = DuplicateScanner::calculate_total_duplicates(&groups);
+                self.duplicate_groups = groups;
+                self.duplicate_scanning = false;
+                self.duplicate_receiver = None;
+                self.duplicate_selected_group = 0;
+                self.duplicate_selected_file = 0;
+                self.status_message = Some(format!(
+                    "Found {} duplicate groups - {} duplicate",
+                    self.duplicate_groups.len(),
+                    humansize::format_size(total_duplicate, humansize::BINARY)
+                ));
+            }
+        }
+
+        // Check for large files scan results
+        if let Some(receiver) = &self.large_files_receiver {
+            if let Ok(files) = receiver.try_recv() {
+                let total_size = LargeFileScanner::calculate_total_size(&files);
+                self.large_files = files;
+                self.large_files_scanning = false;
+                self.large_files_receiver = None;
+                self.large_files_selected_index = 0;
+                self.status_message = Some(format!(
+                    "Found {} large files - {} total",
+                    self.large_files.len(),
+                    humansize::format_size(total_size, humansize::BINARY)
+                ));
             }
         }
 
@@ -174,10 +235,11 @@ impl App {
         let new_screen = match number {
             1 => Screen::StorageCleanup,
             2 => Screen::DiskTreeMap,
-            3 => Screen::DuplicateFinder,
-            4 => Screen::LargeFiles,
-            5 => Screen::Performance,
-            6 => Screen::SecurityScan,
+            // Commented out - not yet available
+            // 3 => Screen::DuplicateFinder,
+            // 4 => Screen::LargeFiles,
+            // 5 => Screen::Performance,
+            // 6 => Screen::SecurityScan,
             _ => return,
         };
 
@@ -197,6 +259,17 @@ impl App {
                     self.start_treemap_scan();
                 }
             }
+            // Commented out - not yet available
+            // Screen::DuplicateFinder => {
+            //     if self.duplicate_groups.is_empty() && !self.duplicate_scanning {
+            //         self.start_duplicate_scan();
+            //     }
+            // }
+            // Screen::LargeFiles => {
+            //     if self.large_files.is_empty() && !self.large_files_scanning {
+            //         self.start_large_files_scan();
+            //     }
+            // }
             _ => {}
         }
     }
@@ -235,6 +308,11 @@ impl App {
             Screen::StorageCleanup => {
                 if self.selected_index > 0 {
                     self.selected_index -= 1;
+                }
+            }
+            Screen::LargeFiles => {
+                if self.large_files_selected_index > 0 {
+                    self.large_files_selected_index -= 1;
                 }
             }
             _ => {}
@@ -318,14 +396,19 @@ impl App {
     pub fn move_down(&mut self) {
         match self.current_screen {
             Screen::Home => {
-                if self.menu_index < 5 {
-                    // 6 menu items (0-5)
+                if self.menu_index < 1 {
+                    // 2 menu items (0-1)
                     self.menu_index += 1;
                 }
             }
             Screen::StorageCleanup => {
                 if !self.cleanable_items.is_empty() && self.selected_index < self.cleanable_items.len() - 1 {
                     self.selected_index += 1;
+                }
+            }
+            Screen::LargeFiles => {
+                if !self.large_files.is_empty() && self.large_files_selected_index < self.large_files.len() - 1 {
+                    self.large_files_selected_index += 1;
                 }
             }
             _ => {}
@@ -352,6 +435,13 @@ impl App {
                     self.treemap_selected_index = 0;
                 }
             }
+            Screen::LargeFiles => {
+                if self.large_files_selected_index >= 10 {
+                    self.large_files_selected_index -= 10;
+                } else {
+                    self.large_files_selected_index = 0;
+                }
+            }
             _ => {}
         }
     }
@@ -372,6 +462,12 @@ impl App {
                 if !items.is_empty() {
                     let new_index = self.treemap_selected_index + 10;
                     self.treemap_selected_index = new_index.min(items.len() - 1);
+                }
+            }
+            Screen::LargeFiles => {
+                if !self.large_files.is_empty() {
+                    let new_index = self.large_files_selected_index + 10;
+                    self.large_files_selected_index = new_index.min(self.large_files.len() - 1);
                 }
             }
             _ => {}
@@ -398,6 +494,13 @@ impl App {
                     self.treemap_selected_index = 0;
                 }
             }
+            Screen::LargeFiles => {
+                if self.large_files_selected_index >= 5 {
+                    self.large_files_selected_index -= 5;
+                } else {
+                    self.large_files_selected_index = 0;
+                }
+            }
             _ => {}
         }
     }
@@ -420,6 +523,12 @@ impl App {
                     self.treemap_selected_index = new_index.min(items.len() - 1);
                 }
             }
+            Screen::LargeFiles => {
+                if !self.large_files.is_empty() {
+                    let new_index = self.large_files_selected_index + 5;
+                    self.large_files_selected_index = new_index.min(self.large_files.len() - 1);
+                }
+            }
             _ => {}
         }
     }
@@ -440,6 +549,14 @@ impl App {
                     item.selected = !item.selected;
                 }
             }
+            Screen::DuplicateFinder => {
+                self.duplicate_toggle_selection();
+            }
+            Screen::LargeFiles => {
+                if let Some(item) = self.large_files.get_mut(self.large_files_selected_index) {
+                    item.selected = !item.selected;
+                }
+            }
             _ => {}
         }
     }
@@ -451,6 +568,14 @@ impl App {
                     item.selected = true;
                 }
             }
+            Screen::DuplicateFinder => {
+                self.duplicate_select_all_but_newest();
+            }
+            Screen::LargeFiles => {
+                for item in &mut self.large_files {
+                    item.selected = true;
+                }
+            }
             _ => {}
         }
     }
@@ -459,6 +584,14 @@ impl App {
         match self.current_screen {
             Screen::StorageCleanup => {
                 for item in &mut self.cleanable_items {
+                    item.selected = false;
+                }
+            }
+            Screen::DuplicateFinder => {
+                self.duplicate_select_none();
+            }
+            Screen::LargeFiles => {
+                for item in &mut self.large_files {
                     item.selected = false;
                 }
             }
@@ -510,6 +643,20 @@ impl App {
     }
 
     pub fn delete_selected(&mut self) -> Result<()> {
+        // Dispatch to appropriate delete handler based on current screen
+        match self.current_screen {
+            Screen::DuplicateFinder => {
+                return self.duplicate_delete_selected();
+            }
+            Screen::LargeFiles => {
+                return self.large_files_delete_selected();
+            }
+            Screen::StorageCleanup => {
+                // Continue with cleanup deletion logic below
+            }
+            _ => return Ok(()),
+        }
+
         let selected_count = self.cleanable_items.iter().filter(|i| i.selected).count();
 
         if selected_count == 0 {
@@ -675,5 +822,269 @@ impl App {
                 self.status_message = Some(format!("Opening: {}", item.name));
             }
         }
+    }
+
+    // Duplicate Finder methods
+    pub fn start_duplicate_scan(&mut self) {
+        self.duplicate_scanning = true;
+        self.status_message = Some("Scanning for duplicates...".to_string());
+
+        // Use custom scan path if provided, otherwise use default
+        let scan_path = self.custom_scan_path.clone()
+            .unwrap_or_else(|| DuplicateScanner::get_default_scan_path());
+
+        let (tx, rx) = channel();
+        self.duplicate_receiver = Some(rx);
+
+        thread::spawn(move || {
+            let scanner = DuplicateScanner::new()
+                .with_min_size(1024 * 100) // 100 KB minimum
+                .with_max_depth(10); // Limit depth for performance
+
+            if let Ok(groups) = scanner.scan(&scan_path) {
+                let _ = tx.send(groups);
+            }
+        });
+    }
+
+    pub fn duplicate_move_up(&mut self) {
+        if self.duplicate_selected_file > 0 {
+            self.duplicate_selected_file -= 1;
+        } else if self.duplicate_selected_group > 0 {
+            // Move to previous group's last file
+            self.duplicate_selected_group -= 1;
+            if let Some(group) = self.duplicate_groups.get(self.duplicate_selected_group) {
+                self.duplicate_selected_file = group.files.len().saturating_sub(1);
+            }
+        }
+    }
+
+    pub fn duplicate_move_down(&mut self) {
+        if let Some(group) = self.duplicate_groups.get(self.duplicate_selected_group) {
+            if self.duplicate_selected_file < group.files.len() - 1 {
+                self.duplicate_selected_file += 1;
+            } else if self.duplicate_selected_group < self.duplicate_groups.len() - 1 {
+                // Move to next group's first file
+                self.duplicate_selected_group += 1;
+                self.duplicate_selected_file = 0;
+            }
+        }
+    }
+
+    pub fn duplicate_toggle_selection(&mut self) {
+        if let Some(group) = self.duplicate_groups.get_mut(self.duplicate_selected_group) {
+            if let Some(file) = group.files.get_mut(self.duplicate_selected_file) {
+                file.selected = !file.selected;
+            }
+        }
+    }
+
+    pub fn duplicate_select_all_but_newest(&mut self) {
+        for group in &mut self.duplicate_groups {
+            if !group.files.is_empty() {
+                // Keep the newest file (last in list after sorting by modified time)
+                let newest_idx = group.files.len() - 1;
+                for (idx, file) in group.files.iter_mut().enumerate() {
+                    file.selected = idx != newest_idx;
+                }
+            }
+        }
+        self.status_message = Some("Selected all duplicates except newest".to_string());
+    }
+
+    pub fn duplicate_select_all_but_oldest(&mut self) {
+        for group in &mut self.duplicate_groups {
+            if !group.files.is_empty() {
+                // Keep the oldest file (first in list after sorting by modified time)
+                for (idx, file) in group.files.iter_mut().enumerate() {
+                    file.selected = idx != 0;
+                }
+            }
+        }
+        self.status_message = Some("Selected all duplicates except oldest".to_string());
+    }
+
+    pub fn duplicate_select_none(&mut self) {
+        for group in &mut self.duplicate_groups {
+            for file in &mut group.files {
+                file.selected = false;
+            }
+        }
+    }
+
+    pub fn duplicate_delete_selected(&mut self) -> Result<()> {
+        let mut total_deleted = 0;
+        let mut total_size = 0u64;
+        let mut failed_count = 0;
+
+        for group in &mut self.duplicate_groups {
+            for file in &group.files {
+                if file.selected {
+                    total_size += file.size;
+                    let result = if file.path.is_dir() {
+                        std::fs::remove_dir_all(&file.path)
+                    } else {
+                        std::fs::remove_file(&file.path)
+                    };
+
+                    match result {
+                        Ok(_) => total_deleted += 1,
+                        Err(_) => failed_count += 1,
+                    }
+                }
+            }
+        }
+
+        // Remove deleted files from groups
+        for group in &mut self.duplicate_groups {
+            group.files.retain(|f| !f.selected);
+        }
+
+        // Remove empty groups
+        self.duplicate_groups.retain(|g| g.files.len() >= 2);
+
+        // Reset selection if needed
+        if self.duplicate_selected_group >= self.duplicate_groups.len() {
+            self.duplicate_selected_group = self.duplicate_groups.len().saturating_sub(1);
+        }
+        if let Some(group) = self.duplicate_groups.get(self.duplicate_selected_group) {
+            if self.duplicate_selected_file >= group.files.len() {
+                self.duplicate_selected_file = group.files.len().saturating_sub(1);
+            }
+        }
+
+        if failed_count > 0 {
+            self.status_message = Some(format!(
+                "Deleted {} files ({}) - {} failed",
+                total_deleted,
+                humansize::format_size(total_size, humansize::BINARY),
+                failed_count
+            ));
+        } else {
+            self.status_message = Some(format!(
+                "Deleted {} duplicate files ({})",
+                total_deleted,
+                humansize::format_size(total_size, humansize::BINARY)
+            ));
+        }
+
+        Ok(())
+    }
+
+    pub fn get_duplicate_selected_count(&self) -> usize {
+        self.duplicate_groups
+            .iter()
+            .flat_map(|g| &g.files)
+            .filter(|f| f.selected)
+            .count()
+    }
+
+    pub fn get_duplicate_selected_size(&self) -> u64 {
+        self.duplicate_groups
+            .iter()
+            .flat_map(|g| &g.files)
+            .filter(|f| f.selected)
+            .map(|f| f.size)
+            .sum()
+    }
+
+    // Large Files methods
+    pub fn start_large_files_scan(&mut self) {
+        self.large_files_scanning = true;
+        self.status_message = Some("Scanning for large files...".to_string());
+
+        // Use custom scan path if provided, otherwise use default
+        let scan_path = self.custom_scan_path.clone()
+            .unwrap_or_else(|| LargeFileScanner::get_default_scan_path());
+
+        let min_size = self.large_files_min_size;
+        let min_age = self.large_files_min_age;
+
+        let (tx, rx) = channel();
+        self.large_files_receiver = Some(rx);
+
+        thread::spawn(move || {
+            let scanner = LargeFileScanner::new()
+                .with_min_size(min_size)
+                .with_min_age_days(min_age)
+                .with_max_depth(10); // Limit depth for performance
+
+            if let Ok(files) = scanner.scan(&scan_path) {
+                let _ = tx.send(files);
+            }
+        });
+    }
+
+    pub fn large_files_delete_selected(&mut self) -> Result<()> {
+        let mut total_deleted = 0;
+        let mut total_size = 0u64;
+        let mut failed_count = 0;
+
+        for file in &self.large_files {
+            if file.selected {
+                total_size += file.size;
+                let result = if file.path.is_dir() {
+                    std::fs::remove_dir_all(&file.path)
+                } else {
+                    std::fs::remove_file(&file.path)
+                };
+
+                match result {
+                    Ok(_) => total_deleted += 1,
+                    Err(_) => failed_count += 1,
+                }
+            }
+        }
+
+        // Remove deleted files from list
+        self.large_files.retain(|f| !f.selected);
+
+        // Reset selection if needed
+        if self.large_files_selected_index >= self.large_files.len() && !self.large_files.is_empty() {
+            self.large_files_selected_index = self.large_files.len() - 1;
+        }
+
+        if failed_count > 0 {
+            self.status_message = Some(format!(
+                "Deleted {} files ({}) - {} failed",
+                total_deleted,
+                humansize::format_size(total_size, humansize::BINARY),
+                failed_count
+            ));
+        } else {
+            self.status_message = Some(format!(
+                "Deleted {} large files ({})",
+                total_deleted,
+                humansize::format_size(total_size, humansize::BINARY)
+            ));
+        }
+
+        Ok(())
+    }
+
+    pub fn large_files_set_min_size(&mut self, size_mb: u64) {
+        self.large_files_min_size = size_mb * 1024 * 1024;
+        // Trigger rescan
+        self.large_files.clear();
+        self.start_large_files_scan();
+    }
+
+    pub fn large_files_set_min_age(&mut self, days: u64) {
+        self.large_files_min_age = days;
+        // Trigger rescan
+        self.large_files.clear();
+        self.start_large_files_scan();
+    }
+
+    pub fn get_large_files_selected_count(&self) -> usize {
+        self.large_files.iter().filter(|f| f.selected).count()
+    }
+
+    pub fn get_large_files_selected_size(&self) -> u64 {
+        self.large_files
+            .iter()
+            .filter(|f| f.selected)
+            .map(|f| f.size)
+            .sum()
     }
 }

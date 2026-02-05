@@ -49,10 +49,10 @@ fn render_menu(frame: &mut Frame, app: &App, area: Rect) {
     let menu_items = vec![
         ("1", "Storage Cleanup", "Clean caches & junk files"),
         ("2", "Disk TreeMap", "Visual disk usage analyzer"),
-        ("3", "Duplicate Finder", "Find duplicate files"),
-        ("4", "Large Files", "Find large/old files"),
-        ("5", "Performance", "RAM/CPU optimization"),
-        ("6", "Security Scan", "Malware detection"),
+        // ("3", "Duplicate Finder", "Find duplicate files"),
+        // ("4", "Large Files", "Find large/old files"),
+        // ("5", "Performance", "RAM/CPU optimization"),
+        // ("6", "Security Scan", "Malware detection"),
     ];
 
     let max_width = area.width.saturating_sub(4); // Account for borders
@@ -184,7 +184,7 @@ fn render_info(frame: &mut Frame, area: Rect) {
         ]),
         Line::from(vec![
             Span::raw("  "),
-            Span::styled("1-6", Style::default().fg(Color::Cyan)),
+            Span::styled("1-2", Style::default().fg(Color::Cyan)),
             Span::raw("       Jump to feature"),
         ]),
         Line::from(vec![

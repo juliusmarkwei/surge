@@ -19,7 +19,7 @@ SURGE v1.0 is a powerful **cross-platform system cleaner** built with **Rust** a
 
 3. **Terminal UI Framework**
    - Ratatui-based TUI with Crossterm
-   - Main menu with 8 features
+   - Main menu with 2 active features (more coming soon)
    - All screen placeholders created
    - Keyboard navigation (vim-style + arrows)
    - Help screen
@@ -96,19 +96,25 @@ cargo test
 
 ## Current Features
 
-### Working
-- ✅ Home screen with main menu
-- ✅ Navigation between screens (press 1-8)
-- ✅ Help screen (press h or ?)
-- ✅ Keyboard navigation (↑↓jk for up/down, q to quit, Esc to go back)
-- ✅ System stats in status bar
-- ✅ Storage cleanup UI (preview only)
+### ✅ Available Now
+- **Storage Cleanup** - Scan and clean system/user caches, logs, trash, downloads, developer caches
+- **Disk TreeMap** - Visual disk usage analyzer with interactive navigation and file preview
+- **Home screen** with main menu
+- **Navigation** between screens (press 1-2)
+- **Help screen** (press h or ?)
+- **Keyboard navigation** (↑↓jk for up/down, q to quit, Esc to go back, PageUp/PageDown, Ctrl+U/D)
+- **System stats** in status bar
+- **Preview mode** (--preview flag)
+- **Custom scan directory** (--scan flag)
+- **Debug mode** (--debug flag)
 
-### In Progress
-- ⏳ Real-time file scanning
-- ⏳ File selection and deletion
-- ⏳ Quarantine system
-- ⏳ Sudo integration
+### 🚧 Coming Soon
+- **Duplicate Finder** - SHA-256 based duplicate file detection with smart selection
+- **Large Files** - Find large and old files with configurable size/age filters
+- **Performance Monitor** - Real-time CPU, RAM, and disk usage optimization
+- **Security Scanner** - Malware detection and removal
+- **Smart Care** - One-click system optimization
+- **System Maintenance** - Maintenance tasks and optimization
 
 ## Project Status
 
@@ -119,18 +125,22 @@ cargo test
 ## Keyboard Shortcuts
 
 ### Navigation
-- `1-8` - Jump to feature screen
+- `1-2` - Jump to feature screen (Storage Cleanup, Disk TreeMap)
 - `↑↓` or `j/k` - Move up/down
-- `←→` or `l` - Move left/right
+- `←→` or `l` - Move left/right (TreeMap navigation)
 - `Esc` - Go back
+- `g` - Go home
 - `q` - Quit
 
-### Actions (Future)
+### Actions
 - `Space` - Toggle selection
 - `a` - Select all
 - `n` - Select none
-- `Enter` - Confirm
-- `d` - Delete
+- `Enter` - Confirm/Open directory (TreeMap)
+- `d` - Delete selected files
+- `s` - Sort items
+- `p` - Toggle preview (TreeMap only)
+- `o` - Open file in default app (TreeMap only)
 - `h/?` - Help
 
 ## Architecture Highlights

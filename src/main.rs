@@ -137,9 +137,9 @@ fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
         KeyCode::Char(c) if c.is_ascii_digit() => {
             match app.current_screen {
                 Screen::Home => {
-                    // On home screen: navigate to feature
+                    // On home screen: navigate to feature (only 1-2 available)
                     if let Some(digit) = c.to_digit(10) {
-                        if digit >= 1 && digit <= 6 {
+                        if digit >= 1 && digit <= 2 {
                             app.navigate_to_screen(digit as usize);
                         }
                     }
@@ -156,6 +156,8 @@ fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
             app.clear_number_buffer();
             match app.current_screen {
                 Screen::DiskTreeMap => app.treemap_move_up(),
+                Screen::DuplicateFinder => app.duplicate_move_up(),
+                Screen::LargeFiles => app.move_up(),
                 _ => app.move_up(),
             }
         }
@@ -163,6 +165,8 @@ fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
             app.clear_number_buffer();
             match app.current_screen {
                 Screen::DiskTreeMap => app.treemap_move_down(),
+                Screen::DuplicateFinder => app.duplicate_move_down(),
+                Screen::LargeFiles => app.move_down(),
                 _ => app.move_down(),
             }
         }

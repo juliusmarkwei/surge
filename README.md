@@ -51,12 +51,12 @@ surge --help                     # Show help
 
 ### Navigation
 
-- `1-6` - Jump to features
+- `1-2` - Jump to features (Storage Cleanup, Disk TreeMap)
 - `↑↓` or `j/k` - Navigate
 - `PageUp/PageDown` - Fast scroll
 - `Space` - Toggle selection
 - `Enter` - Confirm/Open
-- `p` - Toggle preview
+- `p` - Toggle preview (TreeMap only)
 - `s` - Sort
 - `g` - Go home
 - `h/?` - Help
@@ -67,14 +67,13 @@ surge --help                     # Show help
 ### ✅ Available Now
 - **Storage Cleanup** - Scan and clean system/user caches, logs, trash, downloads, developer caches
 - **Disk TreeMap** - Visual disk usage analyzer with interactive navigation and file preview
-- **Performance Monitor** - Real-time CPU, RAM, and disk usage stats
 
 ### 🚧 Coming Soon
-- Smart Care (one-click optimization)
-- Duplicate Finder
-- Large/Old File Scanner
-- Security Scanner
-- System Maintenance
+- **Duplicate Finder** - SHA-256 based duplicate file detection with smart selection
+- **Large Files** - Find large and old files with configurable size/age filters
+- **Performance Monitor** - Real-time CPU, RAM, and disk usage optimization
+- **Security Scanner** - Malware detection and removal
+- **Smart Care** - One-click system optimization
 
 ## Security
 

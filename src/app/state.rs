@@ -44,6 +44,7 @@ pub struct App {
     pub cleanable_items: Vec<CleanableItem>,
     pub selected_index: usize,
     pub scanning: bool,
+    pub deleting: bool,
     pub scan_progress: f64,
     pub spinner_state: usize,
     pub needs_scan: bool,
@@ -100,6 +101,7 @@ impl App {
             cleanable_items: Vec::new(),
             selected_index: 0,
             scanning: false,
+            deleting: false,
             scan_progress: 0.0,
             spinner_state: 0,
             needs_scan: false,
@@ -666,7 +668,13 @@ impl App {
 
         let total_size = self.get_selected_size();
 
+        // Set deleting flag to show loading UI
+        self.deleting = true;
+        self.status_message = Some(format!("Deleting {} items...", selected_count));
+        self.error_message = None;
+
         if self.preview_mode {
+            self.deleting = false;
             self.status_message = Some(format!(
                 "Preview mode: Would delete {} items ({})",
                 selected_count,
@@ -700,18 +708,21 @@ impl App {
 
             if failed_count > 0 {
                 self.status_message = Some(format!(
-                    "Deleted {} items ({}) - {} failed",
+                    "✓ Deleted {} items ({}) - {} failed",
                     deleted_count,
                     humansize::format_size(total_size, humansize::BINARY),
                     failed_count
                 ));
             } else {
                 self.status_message = Some(format!(
-                    "Deleted {} items ({})",
+                    "✓ Deleted {} items ({})",
                     deleted_count,
                     humansize::format_size(total_size, humansize::BINARY)
                 ));
             }
+
+            // Clear deleting flag
+            self.deleting = false;
         }
 
         Ok(())

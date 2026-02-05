@@ -25,7 +25,7 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
     // Render banner
     common::render_banner(frame, chunks[0]);
 
-    // Title (simple, no loading indicator)
+    // Title (always "Storage Cleanup")
     let title_widget = Paragraph::new("Storage Cleanup")
         .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
         .alignment(Alignment::Center)
@@ -34,12 +34,24 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
 
     // Items list
     if app.cleanable_items.is_empty() {
-        let message = if app.scanning {
+        let message = if app.deleting {
+            format!("{} Deleting selected files...", app.get_spinner())
+        } else if app.scanning {
             format!("{} Scanning your system for cleanable items...", app.get_spinner())
         } else {
             "No items found.".to_string()
         };
+
+        let message_style = if app.deleting {
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+        } else if app.scanning {
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default()
+        };
+
         let empty = Paragraph::new(message)
+            .style(message_style)
             .alignment(Alignment::Center)
             .block(Block::default().borders(Borders::ALL).title("Items"));
         frame.render_widget(empty, chunks[2]);
@@ -135,12 +147,16 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
         ]));
     }
 
-    // Show status or error messages
+    // Show status or error messages (but not during scanning/deleting, as that's shown in title)
     if let Some(msg) = &app.status_message {
-        status_lines.push(Line::from(Span::styled(
-            msg,
-            Style::default().fg(Color::Yellow),
-        )));
+        // Only show status message if we're not scanning or deleting
+        // (those states are already shown in the title bar)
+        if !app.scanning && !app.deleting {
+            status_lines.push(Line::from(Span::styled(
+                msg,
+                Style::default().fg(Color::Yellow),
+            )));
+        }
     }
     if let Some(err) = &app.error_message {
         status_lines.push(Line::from(Span::styled(
@@ -149,16 +165,24 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
         )));
     }
 
-    status_lines.push(Line::from(vec![
-        Span::styled("[PgUp/PgDn] ", Style::default().fg(Color::Yellow)),
-        Span::raw("Fast  "),
-        Span::styled("[Ctrl+U/D] ", Style::default().fg(Color::Yellow)),
-        Span::raw("Jump  "),
-        Span::styled("[s] ", Style::default().fg(Color::Cyan)),
-        Span::raw("Sort  "),
-        Span::styled("[Enter] ", Style::default().fg(Color::Green)),
-        Span::raw("Clean"),
-    ]));
+    // Show appropriate actions based on state
+    if app.deleting {
+        status_lines.push(Line::from(vec![
+            Span::styled("⏳ ", Style::default().fg(Color::Red)),
+            Span::styled("Deletion in progress... Please wait", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+        ]));
+    } else {
+        status_lines.push(Line::from(vec![
+            Span::styled("[PgUp/PgDn] ", Style::default().fg(Color::Yellow)),
+            Span::raw("Fast  "),
+            Span::styled("[Ctrl+U/D] ", Style::default().fg(Color::Yellow)),
+            Span::raw("Jump  "),
+            Span::styled("[s] ", Style::default().fg(Color::Cyan)),
+            Span::raw("Sort  "),
+            Span::styled("[Enter] ", Style::default().fg(Color::Green)),
+            Span::raw("Clean"),
+        ]));
+    }
 
     let status = Paragraph::new(status_lines)
         .alignment(Alignment::Center)

@@ -110,6 +110,11 @@ fn run_app<B: ratatui::backend::Backend>(
 fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
     use crate::app::state::Screen;
 
+    // Block most interactions during deletion
+    if app.deleting && !matches!(key.code, KeyCode::Char('q') | KeyCode::Char('Q')) {
+        return Ok(false);
+    }
+
     match key.code {
         KeyCode::Char('q') | KeyCode::Char('Q') => return Ok(true),
         KeyCode::Esc => {
